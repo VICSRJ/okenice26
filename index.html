@@ -1,17 +1,38 @@
 <!doctype html>
 <html lang="cs">
 <head>
-<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="description" content="Okenice26 — databáze odkazů a projektů.">
+<meta name="theme-color" content="#008080">
 <title>Okenice26 — Link Database</title>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/95css@0.4.2/css/95css.min.css">
 <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-<header class="topbar"><a class="logo" href="#home">Okenice26</a><nav><a class="is-active" href="#home">Domů</a><a href="#database">Databáze</a><a href="#about">Info</a></nav></header>
+<header class="topbar" id="topbar">
+  <div class="topbar-main">
+    <a class="logo" href="#home" aria-label="Okenice26 domů">
+      <span class="logo-mark" aria-hidden="true">O</span>
+      <span class="logo-copy"><strong>Okenice26</strong><small>LINK DATABASE</small></span>
+    </a>
+    <nav class="topnav" aria-label="Hlavní navigace">
+      <a class="nav-item is-active" href="#home"><span>⌂</span><b>Domů</b></a>
+      <a class="nav-item" href="#database"><span>▦</span><b>Databáze</b></a>
+      <a class="nav-item" href="#about"><span>ⓘ</span><b>Info</b></a>
+    </nav>
+    <div class="topbar-tools">
+      <span class="system-pill"><i></i><span>LOCAL / READY</span></span>
+      <a class="top-action" href="#database" aria-label="Otevřít databázi">Otevřít <span>↗</span></a>
+    </div>
+  </div>
+  <div class="topbar-sub">
+    <span class="crumb"><span>Okenice26</span><em>/</em><strong>Databáze odkazů</strong></span>
+    <span class="viewport-note">RESPONSIVE UI <span>•</span> 320px → 4K</span>
+  </div>
+</header>
 <main class="desktop" id="home">
 <section class="window hero-window"><div class="window-titlebar"><span>Okenice26 — Link Database</span><div class="window-controls"><button tabindex="-1">_</button><button tabindex="-1">□</button><button tabindex="-1">×</button></div></div>
-<div class="window-body hero-body"><div><p class="eyebrow">DATABASE / LINKS / 2026</p><h1>Okenice26</h1><p>Jednoduchá databáze odkazů, projektů, referencí a zdrojů. Data jsou oddělena od rozhraní a uložena v <code>data/links.json</code>.</p><div class="toolbar hero-actions"><a class="btn is-highlighted" href="#database">Procházet databázi</a><button id="add-link">Přidat odkaz</button></div></div>
+<div class="window-body hero-body"><div class="hero-copy"><p class="eyebrow">DATABASE / LINKS / 2026</p><h1>Okenice26</h1><p>Jednoduchá databáze odkazů, projektů, referencí a zdrojů. Data jsou oddělena od rozhraní a uložena v <code>data/links.json</code>.</p><div class="toolbar hero-actions"><a class="btn is-highlighted" href="#database">Procházet databázi</a><button id="add-link">Přidat odkaz</button></div></div>
 <aside class="status-panel"><h2>Database status</h2><dl><div><dt>Záznamů</dt><dd id="count">0</dd></div><div><dt>Kategorie</dt><dd id="category-count">0</dd></div><div><dt>Zdroj</dt><dd>links.json</dd></div><div><dt>Status</dt><dd><span class="status-dot"></span>Ready</dd></div></dl></aside></div></section>
 <section id="database" class="window"><div class="window-titlebar"><span>C:\\Okenice26\\data\\links.json</span><div class="window-controls"><button tabindex="-1">_</button><button tabindex="-1">□</button><button tabindex="-1">×</button></div></div><div class="window-body">
 <div class="toolbar project-toolbar"><label for="search">Hledat</label><input id="search" type="search" placeholder="název, URL, tag…" autocomplete="off"><button id="reset" type="button">Vymazat</button><button id="export" type="button">Export</button></div>
