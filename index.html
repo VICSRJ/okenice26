@@ -12,6 +12,10 @@
 </head>
 <body>
 <main id="desktop" class="desktop" tabindex="0" aria-label="Windows 98 Desktop">
+  <div id="desktop-navigation" class="desktop-navigation" hidden>
+    <button id="desktop-back" class="desktop-back" type="button" aria-label="Back">◀ Back</button>
+    <span id="desktop-path" class="desktop-path">Desktop</span>
+  </div>
   <div id="desktop-icons" class="desktop-icons" aria-label="Desktop shortcuts"></div>
   <div id="context-menu" class="context-menu" hidden>
     <button type="button" data-context="arrange">Arrange Icons</button>
@@ -46,7 +50,7 @@
     </div>
     <div class="submenu" data-submenu-panel="programs" hidden></div>
     <div class="submenu" data-submenu-panel="favorites" hidden></div>
-    <div class="submenu" data-submenu-panel="documents" hidden></div>
+    <div class="submenu" data-submenu-panel="folders" hidden></div>
     <div class="submenu" data-submenu-panel="settings" hidden></div>
   </div>
 </footer>
