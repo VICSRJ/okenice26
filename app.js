@@ -45,27 +45,49 @@
     return `<span class="icon-art icon-folder ${menuIcon ? 'menu-icon' : ''}"></span>`;
   }
 
-  function shortcutMarkup(item, menuIcon = false) {
-    const external = /^https?:/i.test(item.url);
+  function shortcutMarkup(item, menuIcon = false, nested = false) {
+    const external = /^https?:/i.test(item.url || '');
     if (!menuIcon) {
-      return `<a class="desktop-icon" href="${escapeHtml(item.url)}" data-shortcut-id="${escapeHtml(item.id)}" aria-label="${escapeHtml(item.title)}">${iconMarkup(item)}<span>${escapeHtml(item.title)}</span></a>`;
+      return `<a class="desktop-icon" href="${escapeHtml(item.url || '#')}" data-shortcut-id="${escapeHtml(item.id)}" aria-label="${escapeHtml(item.title)}">${iconMarkup(item)}<span>${escapeHtml(item.title)}</span></a>`;
     }
-    return `<a href="${escapeHtml(item.url)}" data-menu-shortcut-id="${escapeHtml(item.id)}"${external ? ' target="_blank" rel="noopener"' : ''}>${iconMarkup(item, true)}<span>${escapeHtml(item.title)}</span></a>`;
+    const folderClass = item.type === 'folder' ? ' menu-folder-link' : '';
+    return `<a class="menu-shortcut${folderClass}${nested ? ' nested' : ''}" href="${escapeHtml(item.url || '#')}" data-menu-shortcut-id="${escapeHtml(item.id)}">${iconMarkup(item, true)}<span>${escapeHtml(item.title)}</span>${item.type === 'folder' ? '<span class="submenu-arrow">▶</span>' : ''}</a>`;
+  }
+
+  function resolveItem(id) {
+    return catalogItems.get(id) || null;
+  }
+
+  function renderMenuEntries(ids, depth = 0) {
+    const entries = [];
+    ids.forEach(id => {
+      const item = resolveItem(id);
+      if (!item) return;
+      entries.push(shortcutMarkup(item, true, depth > 0));
+      if (item.type === 'folder' && Array.isArray(item.children) && item.children.length) {
+        entries.push(`<div class="nested-folder" data-folder-id="${escapeHtml(item.id)}">${renderMenuEntries(item.children, depth + 1).join('')}</div>`);
+      }
+    });
+    return entries;
   }
 
   function renderCatalog(catalog) {
-    catalogItems = new Map((catalog.desktop || []).map(item => [item.id, item]));
-    icons.innerHTML = (catalog.desktop || []).map(item => shortcutMarkup(item)).join('');
+    const sourceItems = Array.isArray(catalog.items) ? catalog.items : (catalog.desktop || []);
+    catalogItems = new Map(sourceItems.map(item => [item.id, item]));
 
-    quickLaunch.innerHTML = (catalog.desktop || []).slice(0, 4).map(item => {
-      const external = /^https?:/i.test(item.url);
-      return `<a class="quick-button" href="${escapeHtml(item.url)}"${external ? ' target="_blank" rel="noopener"' : ''} aria-label="${escapeHtml(item.title)}">${iconMarkup(item, true)}</a>`;
+    const desktopIds = Array.isArray(catalog.desktop) ? catalog.desktop : sourceItems.map(item => item.id);
+    icons.innerHTML = desktopIds.map(resolveItem).filter(Boolean).map(item => shortcutMarkup(item)).join('');
+
+    const quickIds = Array.isArray(catalog.quickLaunch) ? catalog.quickLaunch : desktopIds.slice(0, 4);
+    quickLaunch.innerHTML = quickIds.map(resolveItem).filter(Boolean).map(item => {
+      const external = /^https?:/i.test(item.url || '');
+      return `<a class="quick-button" href="${escapeHtml(item.url || '#')}"${external ? ' target="_blank" rel="noopener"' : ''} aria-label="${escapeHtml(item.title)}">${iconMarkup(item, true)}</a>`;
     }).join('');
 
     Object.entries(catalog.menus || {}).forEach(([menuId, ids]) => {
       const panel = menu.querySelector(`[data-submenu-panel="${menuId}"]`);
       if (!panel) return;
-      panel.innerHTML = ids.map(id => catalogItems.get(id)).filter(Boolean).map(item => shortcutMarkup(item, true)).join('');
+      panel.innerHTML = renderMenuEntries(ids);
     });
   }
 
@@ -81,12 +103,17 @@
 
   function openTarget(item, newWindow = false) {
     if (!item) return;
-    if (/^https?:/i.test(item.url)) {
+    if (item.type === 'folder' && Array.isArray(item.children)) {
+      selectedItem = item;
+      openShortcutModal(item);
+      return;
+    }
+    if (/^https?:/i.test(item.url || '')) {
       if (newWindow) window.open(item.url, '_blank', 'noopener,noreferrer');
       else window.location.href = item.url;
       return;
     }
-    window.location.href = item.url;
+    window.location.href = item.url || '#';
   }
 
   function selectDesktopShortcut(link) {
@@ -99,15 +126,20 @@
   }
 
   function openShortcutModal(item) {
+    const isFolder = item.type === 'folder';
+    const childCount = Array.isArray(item.children) ? item.children.length : 0;
     modalName.textContent = item.title;
-    modalKind.textContent = item.type === 'folder' ? 'Folder shortcut' : 'Internet shortcut';
+    modalKind.textContent = isFolder ? `Folder · ${childCount} item${childCount === 1 ? '' : 's'}` : 'Internet shortcut';
     modalPreview.innerHTML = iconMarkup(item);
     detailName.textContent = item.title;
-    detailTarget.textContent = item.url;
+    detailTarget.textContent = isFolder ? `${childCount} item${childCount === 1 ? '' : 's'} inside this folder` : (item.url || '—');
     detailType.textContent = item.type || 'app';
     detailCategory.textContent = item.category || '—';
-    detailDescription.textContent = item.description || (item.type === 'folder' ? 'Shortcut to a folder or collection.' : 'Shortcut to a web application or page.');
+    detailDescription.textContent = item.description || (isFolder ? 'Folder shortcut. This folder can contain links and other folders.' : 'Shortcut to a web application or page.');
     modal.hidden = false;
+    openButton.disabled = isFolder;
+    newWindowButton.disabled = isFolder;
+    copyButton.disabled = isFolder;
     openButton.focus();
   }
 
@@ -115,6 +147,9 @@
     modal.hidden = true;
     selectedItem = null;
     icons.querySelectorAll('.desktop-icon.selected').forEach(node => node.classList.remove('selected'));
+    openButton.disabled = false;
+    newWindowButton.disabled = false;
+    copyButton.disabled = false;
   }
 
   start.addEventListener('click', event => {
@@ -137,7 +172,17 @@
   });
 
   menu.addEventListener('click', event => {
-    if (event.target.closest('.submenu a')) setStart(false);
+    const link = event.target.closest('.submenu a');
+    if (!link) return;
+    const item = catalogItems.get(link.dataset.menuShortcutId);
+    if (item?.type === 'folder') {
+      event.preventDefault();
+      link.classList.toggle('expanded');
+      const folder = menu.querySelector(`.nested-folder[data-folder-id="${CSS.escape(item.id)}"]`);
+      if (folder) folder.classList.toggle('expanded');
+      return;
+    }
+    setStart(false);
   });
 
   document.addEventListener('click', event => {
@@ -152,7 +197,7 @@
       closeContext();
       if (!modal.hidden) closeShortcutModal();
     }
-    if (!modal.hidden && event.key === 'Enter' && document.activeElement === openButton) {
+    if (!modal.hidden && event.key === 'Enter' && document.activeElement === openButton && !openButton.disabled) {
       openTarget(selectedItem, false);
     }
   });
@@ -173,6 +218,10 @@
     const item = catalogItems.get(icon.dataset.shortcutId);
     if (!item) return;
     selectedItem = item;
+    if (item.type === 'folder') {
+      openShortcutModal(item);
+      return;
+    }
     openTarget(item, false);
   });
 
@@ -199,7 +248,7 @@
   openButton.addEventListener('click', () => openTarget(selectedItem, false));
   newWindowButton.addEventListener('click', () => openTarget(selectedItem, true));
   copyButton.addEventListener('click', async () => {
-    if (!selectedItem) return;
+    if (!selectedItem || selectedItem.type === 'folder') return;
     try {
       await navigator.clipboard.writeText(selectedItem.url);
       copyButton.textContent = 'Copied';
