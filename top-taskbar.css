@@ -1,0 +1,6 @@
+/* Windows 98: top-docked taskbar mode */
+.desktop{inset:28px 0 0!important}
+.taskbar{top:0!important;bottom:auto!important;border-top:0!important;border-bottom:1px solid #fff!important}
+.start-menu{top:27px!important;bottom:auto!important}
+@media(max-width:700px){.desktop{inset:38px 0 0!important}.taskbar{top:0!important;bottom:auto!important}.start-menu{top:37px!important;bottom:auto!important}}
+@media(max-width:420px){.desktop{inset:42px 0 0!important}.taskbar{top:0!important;bottom:auto!important}.start-menu{top:41px!important;bottom:auto!important}.submenu{top:42px!important}}
