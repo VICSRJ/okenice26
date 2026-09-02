@@ -10,21 +10,33 @@
 </head>
 <body>
 <header class="start-panel" aria-label="Hlavní panel">
-  <button class="start-button" id="start-button" type="button"><strong>Start</strong></button>
+  <button class="start-button" id="start-button" type="button"><span class="start-mark">▰</span><strong>Start</strong></button>
   <div class="panel-divider" aria-hidden="true"></div>
   <div class="panel-title">Okenice26</div>
   <nav class="panel-nav" aria-label="Navigace">
     <a href="#home">Domů</a>
-    <a href="#content">Obsah</a>
+    <a href="#about">O projektu</a>
   </nav>
   <time id="clock" aria-label="Čas"></time>
 </header>
+
 <main id="home" class="desktop">
-  <section class="window" id="content">
-    <div class="window-titlebar"><span>Okenice26</span><div class="window-controls" aria-hidden="true"><button type="button">_</button><button type="button">□</button><button type="button">×</button></div></div>
-    <div class="window-body">
-      <h1>Okenice26</h1>
-      <p>Jednoduchá základní šablona.</p>
+  <section class="window welcome-window" id="about" aria-labelledby="window-title">
+    <div class="window-titlebar">
+      <span id="window-title">Okenice26</span>
+      <div class="window-controls" aria-hidden="true"><button type="button">_</button><button type="button">□</button><button type="button">×</button></div>
+    </div>
+    <div class="window-body welcome-body">
+      <div class="welcome-icon" aria-hidden="true">O</div>
+      <div class="welcome-copy">
+        <div class="eyebrow">WELCOME</div>
+        <h1>Okenice26</h1>
+        <p>Jednoduchá retro webová šablona inspirovaná Windows 95.</p>
+        <div class="welcome-actions">
+          <a class="action-button" href="#about">O projektu</a>
+          <button class="action-button" id="continue-button" type="button">Pokračovat</button>
+        </div>
+      </div>
     </div>
   </section>
 </main>
