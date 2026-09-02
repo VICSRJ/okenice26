@@ -1,45 +1,33 @@
 <!doctype html>
 <html lang="cs">
 <head>
-<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<meta name="description" content="Okenice26 — databáze odkazů a projektů.">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#008080">
-<title>Okenice26 — Link Database</title>
+<title>Okenice26</title>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/95css@0.4.2/css/95css.min.css">
 <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-<header class="topbar" id="topbar">
-  <div class="topbar-main">
-    <a class="logo" href="#home" aria-label="Okenice26 domů">
-      <span class="logo-mark" aria-hidden="true">O</span>
-      <span class="logo-copy"><strong>Okenice26</strong><small>LINK DATABASE</small></span>
-    </a>
-    <nav class="topnav" aria-label="Hlavní navigace">
-      <a class="nav-item is-active" href="#home"><span>⌂</span><b>Domů</b></a>
-      <a class="nav-item" href="#database"><span>▦</span><b>Databáze</b></a>
-      <a class="nav-item" href="#about"><span>ⓘ</span><b>Info</b></a>
-    </nav>
-    <div class="topbar-tools">
-      <span class="system-pill"><i></i><span>LOCAL / READY</span></span>
-      <a class="top-action" href="#database" aria-label="Otevřít databázi">Otevřít <span>↗</span></a>
-    </div>
-  </div>
-  <div class="topbar-sub">
-    <span class="crumb"><span>Okenice26</span><em>/</em><strong>Databáze odkazů</strong></span>
-    <span class="viewport-note">RESPONSIVE UI <span>•</span> 320px → 4K</span>
-  </div>
+<header class="start-panel" aria-label="Hlavní panel">
+  <button class="start-button" id="start-button" type="button"><strong>Start</strong></button>
+  <div class="panel-divider" aria-hidden="true"></div>
+  <div class="panel-title">Okenice26</div>
+  <nav class="panel-nav" aria-label="Navigace">
+    <a href="#home">Domů</a>
+    <a href="#content">Obsah</a>
+  </nav>
+  <time id="clock" aria-label="Čas"></time>
 </header>
-<main class="desktop" id="home">
-<section class="window hero-window"><div class="window-titlebar"><span>Okenice26 — Link Database</span><div class="window-controls"><button tabindex="-1">_</button><button tabindex="-1">□</button><button tabindex="-1">×</button></div></div>
-<div class="window-body hero-body"><div class="hero-copy"><p class="eyebrow">DATABASE / LINKS / 2026</p><h1>Okenice26</h1><p>Jednoduchá databáze odkazů, projektů, referencí a zdrojů. Data jsou oddělena od rozhraní a uložena v <code>data/links.json</code>.</p><div class="toolbar hero-actions"><a class="btn is-highlighted" href="#database">Procházet databázi</a><button id="add-link">Přidat odkaz</button></div></div>
-<aside class="status-panel"><h2>Database status</h2><dl><div><dt>Záznamů</dt><dd id="count">0</dd></div><div><dt>Kategorie</dt><dd id="category-count">0</dd></div><div><dt>Zdroj</dt><dd>links.json</dd></div><div><dt>Status</dt><dd><span class="status-dot"></span>Ready</dd></div></dl></aside></div></section>
-<section id="database" class="window"><div class="window-titlebar"><span>C:\\Okenice26\\data\\links.json</span><div class="window-controls"><button tabindex="-1">_</button><button tabindex="-1">□</button><button tabindex="-1">×</button></div></div><div class="window-body">
-<div class="toolbar project-toolbar"><label for="search">Hledat</label><input id="search" type="search" placeholder="název, URL, tag…" autocomplete="off"><button id="reset" type="button">Vymazat</button><button id="export" type="button">Export</button></div>
-<div class="tabs" id="categories" role="tablist"></div><div class="link-table-wrap"><table class="link-table"><thead><tr><th>Název</th><th>Kategorie</th><th>URL</th><th>Tagy</th><th>Akce</th></tr></thead><tbody id="links"></tbody></table></div><p id="empty" class="empty-state" hidden>Žádný odkaz neodpovídá filtru.</p></div></section>
-<section id="about" class="window"><div class="window-titlebar"><span>O aplikaci</span></div><div class="window-body two-col"><div><h2>Datový model</h2><p>Každý záznam má ID, název, URL, kategorii, tagy a popis. Databáze je záměrně jednoduchá a může se později přesunout na API, SQLite nebo Supabase.</p></div><div><h2>Lokální režim</h2><p>Přidané záznamy se ukládají do localStorage. Tlačítko Export vytvoří aktuální JSON pro další synchronizaci do repozitáře.</p></div></div></section>
+<main id="home" class="desktop">
+  <section class="window" id="content">
+    <div class="window-titlebar"><span>Okenice26</span><div class="window-controls" aria-hidden="true"><button type="button">_</button><button type="button">□</button><button type="button">×</button></div></div>
+    <div class="window-body">
+      <h1>Okenice26</h1>
+      <p>Jednoduchá základní šablona.</p>
+    </div>
+  </section>
 </main>
-<footer class="taskbar"><button id="start-button" class="start-button">Start</button><div class="task-divider"></div><span class="task-title">Okenice26 — Link Database</span><time id="clock"></time></footer>
-<dialog id="link-dialog"><div class="dialog-header"><h2 id="dialog-title">Přidat odkaz</h2></div><form method="dialog" class="dialog-body" id="link-form"><label>Název<input id="f-title" required></label><label>URL<input id="f-url" type="url" required placeholder="https://…"></label><label>Kategorie<input id="f-category" required placeholder="Projekty"></label><label>Tagy<input id="f-tags" placeholder="github, web"></label><label>Popis<textarea id="f-description" rows="3"></textarea></label><div class="toolbar dialog-actions"><button value="cancel">Zrušit</button><button id="save-link" class="is-highlighted" value="default">Uložit</button></div></form></dialog>
 <script src="app.js" defer></script>
-</body></html>
+</body>
+</html>
