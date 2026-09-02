@@ -10,14 +10,19 @@
 </head>
 <body>
 <header class="start-panel" aria-label="Hlavní panel">
-  <button class="start-button" id="start-button" type="button"><span class="start-mark">▰</span><strong>Start</strong></button>
+  <button class="start-button" id="start-button" type="button" aria-expanded="false" aria-controls="start-menu"><span class="start-mark">▰</span><strong>Start</strong></button>
   <div class="panel-divider" aria-hidden="true"></div>
   <div class="panel-title">Okenice26</div>
-  <nav class="panel-nav" aria-label="Navigace">
-    <a href="#home">Domů</a>
-    <a href="#about">O projektu</a>
-  </nav>
+  <div class="panel-menu-label">Menu</div>
   <time id="clock" aria-label="Čas"></time>
+
+  <div class="start-menu" id="start-menu" hidden>
+    <div class="menu-heading"><span class="start-mark">▰</span><strong>Okenice26</strong></div>
+    <button type="button" data-target="#home">Domů</button>
+    <button type="button" data-target="#about">O projektu</button>
+    <div class="menu-separator"></div>
+    <button type="button" data-action="close">Zavřít menu</button>
+  </div>
 </header>
 
 <main id="home" class="desktop">
