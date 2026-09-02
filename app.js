@@ -5,6 +5,9 @@
   const menu = document.getElementById('start-menu');
   const desktop = document.getElementById('desktop');
   const icons = document.getElementById('desktop-icons');
+  const desktopNavigation = document.getElementById('desktop-navigation');
+  const desktopBack = document.getElementById('desktop-back');
+  const desktopPath = document.getElementById('desktop-path');
   const context = document.getElementById('context-menu');
   const quickLaunch = document.getElementById('quick-launch');
   const clock = document.getElementById('clock');
@@ -28,6 +31,9 @@
   let catalogItems = new Map();
   let selectedItem = null;
   let clickTimer = null;
+  let currentFolderId = null;
+  let rootDesktopIds = [];
+  const parentFolders = new Map();
 
   const setStart = open => {
     menu.hidden = !open;
@@ -46,17 +52,12 @@
   }
 
   function shortcutMarkup(item, menuIcon = false, nested = false) {
-    const external = /^https?:/i.test(item.url || '');
-    if (!menuIcon) {
-      return `<a class="desktop-icon" href="${escapeHtml(item.url || '#')}" data-shortcut-id="${escapeHtml(item.id)}" aria-label="${escapeHtml(item.title)}">${iconMarkup(item)}<span>${escapeHtml(item.title)}</span></a>`;
-    }
+    if (!menuIcon) return `<a class="desktop-icon" href="${escapeHtml(item.url || '#')}" data-shortcut-id="${escapeHtml(item.id)}" aria-label="${escapeHtml(item.title)}">${iconMarkup(item)}<span>${escapeHtml(item.title)}</span></a>`;
     const folderClass = item.type === 'folder' ? ' menu-folder-link' : '';
     return `<a class="menu-shortcut${folderClass}${nested ? ' nested' : ''}" href="${escapeHtml(item.url || '#')}" data-menu-shortcut-id="${escapeHtml(item.id)}">${iconMarkup(item, true)}<span>${escapeHtml(item.title)}</span>${item.type === 'folder' ? '<span class="submenu-arrow">▶</span>' : ''}</a>`;
   }
 
-  function resolveItem(id) {
-    return catalogItems.get(id) || null;
-  }
+  const resolveItem = id => catalogItems.get(id) || null;
 
   function renderMenuEntries(ids, depth = 0) {
     const entries = [];
@@ -71,14 +72,60 @@
     return entries;
   }
 
+  function buildFolderRelations() {
+    parentFolders.clear();
+    catalogItems.forEach(item => {
+      if (item.type !== 'folder' || !Array.isArray(item.children)) return;
+      item.children.forEach(childId => {
+        if (!parentFolders.has(childId)) parentFolders.set(childId, item.id);
+      });
+    });
+  }
+
+  function folderPath(item) {
+    const parts = [item.title];
+    let parentId = parentFolders.get(item.id);
+    const seen = new Set();
+    while (parentId && !seen.has(parentId)) {
+      seen.add(parentId);
+      const parent = resolveItem(parentId);
+      if (!parent) break;
+      parts.unshift(parent.title);
+      parentId = parentFolders.get(parent.id);
+    }
+    return ['Desktop', ...parts].join(' > ');
+  }
+
+  function renderDesktop(ids, folder = null) {
+    icons.innerHTML = ids.map(resolveItem).filter(Boolean).map(item => shortcutMarkup(item)).join('');
+    currentFolderId = folder ? folder.id : null;
+    desktopNavigation.hidden = !folder;
+    desktopBack.disabled = !folder;
+    desktopPath.textContent = folder ? folderPath(folder) : 'Desktop';
+    desktop.setAttribute('aria-label', folder ? `Windows 98 Desktop — ${folder.title}` : 'Windows 98 Desktop');
+  }
+
+  function openFolder(item) {
+    if (!item || item.type !== 'folder') return;
+    closeShortcutModal();
+    renderDesktop(Array.isArray(item.children) ? item.children : [], item);
+  }
+
+  function goBackFolder() {
+    if (!currentFolderId) return;
+    const parentId = parentFolders.get(currentFolderId);
+    const parent = parentId ? resolveItem(parentId) : null;
+    renderDesktop(parent ? (parent.children || []) : rootDesktopIds, parent);
+  }
+
   function renderCatalog(catalog) {
     const sourceItems = Array.isArray(catalog.items) ? catalog.items : (catalog.desktop || []);
     catalogItems = new Map(sourceItems.map(item => [item.id, item]));
+    buildFolderRelations();
+    rootDesktopIds = Array.isArray(catalog.desktop) ? catalog.desktop : sourceItems.map(item => item.id);
+    renderDesktop(rootDesktopIds);
 
-    const desktopIds = Array.isArray(catalog.desktop) ? catalog.desktop : sourceItems.map(item => item.id);
-    icons.innerHTML = desktopIds.map(resolveItem).filter(Boolean).map(item => shortcutMarkup(item)).join('');
-
-    const quickIds = Array.isArray(catalog.quickLaunch) ? catalog.quickLaunch : desktopIds.slice(0, 4);
+    const quickIds = Array.isArray(catalog.quickLaunch) ? catalog.quickLaunch : rootDesktopIds.slice(0, 4);
     quickLaunch.innerHTML = quickIds.map(resolveItem).filter(Boolean).map(item => {
       const external = /^https?:/i.test(item.url || '');
       return `<a class="quick-button" href="${escapeHtml(item.url || '#')}"${external ? ' target="_blank" rel="noopener"' : ''} aria-label="${escapeHtml(item.title)}">${iconMarkup(item, true)}</a>`;
@@ -86,8 +133,7 @@
 
     Object.entries(catalog.menus || {}).forEach(([menuId, ids]) => {
       const panel = menu.querySelector(`[data-submenu-panel="${menuId}"]`);
-      if (!panel) return;
-      panel.innerHTML = renderMenuEntries(ids);
+      if (panel) panel.innerHTML = renderMenuEntries(ids);
     });
   }
 
@@ -103,11 +149,7 @@
 
   function openTarget(item, newWindow = false) {
     if (!item) return;
-    if (item.type === 'folder' && Array.isArray(item.children)) {
-      selectedItem = item;
-      openShortcutModal(item);
-      return;
-    }
+    if (item.type === 'folder') return openFolder(item);
     if (/^https?:/i.test(item.url || '')) {
       if (newWindow) window.open(item.url, '_blank', 'noopener,noreferrer');
       else window.location.href = item.url;
@@ -132,12 +174,13 @@
     modalKind.textContent = isFolder ? `Folder · ${childCount} item${childCount === 1 ? '' : 's'}` : 'Internet shortcut';
     modalPreview.innerHTML = iconMarkup(item);
     detailName.textContent = item.title;
-    detailTarget.textContent = isFolder ? `${childCount} item${childCount === 1 ? '' : 's'} inside this folder` : (item.url || '—');
+    detailTarget.textContent = isFolder ? folderPath(item) : (item.url || '—');
     detailType.textContent = item.type || 'app';
     detailCategory.textContent = item.category || '—';
     detailDescription.textContent = item.description || (isFolder ? 'Folder shortcut. This folder can contain links and other folders.' : 'Shortcut to a web application or page.');
     modal.hidden = false;
-    openButton.disabled = isFolder;
+    openButton.disabled = false;
+    openButton.textContent = isFolder ? 'Open Folder' : 'Open';
     newWindowButton.disabled = isFolder;
     copyButton.disabled = isFolder;
     openButton.focus();
@@ -148,6 +191,7 @@
     selectedItem = null;
     icons.querySelectorAll('.desktop-icon.selected').forEach(node => node.classList.remove('selected'));
     openButton.disabled = false;
+    openButton.textContent = 'Open';
     newWindowButton.disabled = false;
     copyButton.disabled = false;
   }
@@ -197,10 +241,14 @@
       closeContext();
       if (!modal.hidden) closeShortcutModal();
     }
-    if (!modal.hidden && event.key === 'Enter' && document.activeElement === openButton && !openButton.disabled) {
-      openTarget(selectedItem, false);
+    if (!modal.hidden && event.key === 'Enter' && document.activeElement === openButton && !openButton.disabled) openTarget(selectedItem, false);
+    if (modal.hidden && event.altKey && event.key === 'ArrowLeft' && currentFolderId) {
+      event.preventDefault();
+      goBackFolder();
     }
   });
+
+  desktopBack.addEventListener('click', goBackFolder);
 
   icons.addEventListener('click', event => {
     const icon = event.target.closest('.desktop-icon');
@@ -217,16 +265,11 @@
     window.clearTimeout(clickTimer);
     const item = catalogItems.get(icon.dataset.shortcutId);
     if (!item) return;
-    selectedItem = item;
-    if (item.type === 'folder') {
-      openShortcutModal(item);
-      return;
-    }
     openTarget(item, false);
   });
 
   desktop.addEventListener('contextmenu', event => {
-    if (event.target.closest('.desktop-icon')) return;
+    if (event.target.closest('.desktop-icon') || event.target.closest('.desktop-navigation')) return;
     event.preventDefault();
     context.hidden = false;
     context.style.left = `${Math.max(2, Math.min(event.clientX, window.innerWidth - 195))}px`;
@@ -260,10 +303,7 @@
   });
 
   function closeContext() { context.hidden = true; }
-
-  function updateClock() {
-    clock.textContent = new Date().toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
-  }
+  function updateClock() { clock.textContent = new Date().toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' }); }
 
   loadCatalog();
   updateClock();
