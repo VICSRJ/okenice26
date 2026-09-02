@@ -1,25 +1,18 @@
-# Okenice26
+# Okenice26 — Windows 98 link template
 
-Retro desktop-style web postavený na [95CSS](https://github.com/YoshiMannaert/95CSS).
+A lightweight Windows 98-style desktop template for web application shortcuts and folders.
 
-## Stack
+## Shortcut model
 
-- HTML5
-- CSS
-- Vanilla JavaScript
-- 95CSS 0.4.2 přes jsDelivr
-- GitHub Pages
+Each desktop item is a normal `<a>` link. The same icon asset can be reused in the desktop, Quick Launch and Start menu.
 
-## Funkce
+Example:
 
-- Windows 95 vizuální systém a bevel UI
-- responzivní layout pro desktop i telefon
-- projektový explorer s kategoriemi
-- živé vyhledávání
-- modální detail projektu
-- taskbar se stavem a hodinami
-- bez build procesu
+```html
+<a class="desktop-icon" href="https://www.google.com/" target="_blank" rel="noopener">
+  <img class="shortcut-icon" src="icons/google.icon.svg" alt="">
+  <span>Google</span>
+</a>
+```
 
-## Spuštění
-
-Web je čistě statický. Stačí otevřít `index.html` nebo publikovat repository přes GitHub Pages.
+Icon assets live in `icons/` and use names such as `google.icon.svg`, `google-cz.icon.svg`, and `search.icon.svg`.
