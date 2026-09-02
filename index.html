@@ -23,6 +23,7 @@
     <button type="button" data-context="properties">Properties</button>
   </div>
 </main>
+
 <footer id="taskbar" class="taskbar">
   <button id="start-button" class="start-button" type="button" aria-expanded="false" aria-controls="start-menu"><span class="windows-logo"></span><strong>Start</strong></button>
   <div class="taskbar-divider"></div>
@@ -49,6 +50,39 @@
     <div class="submenu" data-submenu-panel="settings" hidden></div>
   </div>
 </footer>
+
+<div id="shortcut-modal" class="shortcut-modal" hidden>
+  <div class="shortcut-dialog" role="dialog" aria-modal="true" aria-labelledby="shortcut-title">
+    <div class="shortcut-titlebar">
+      <span class="dialog-windows-mark" aria-hidden="true"></span>
+      <span id="shortcut-title">Shortcut Properties</span>
+      <button id="shortcut-close" class="shortcut-close" type="button" aria-label="Close">×</button>
+    </div>
+    <div class="shortcut-body">
+      <div class="shortcut-summary">
+        <div id="shortcut-preview" class="shortcut-preview"></div>
+        <div class="shortcut-heading">
+          <strong id="shortcut-name">Shortcut</strong>
+          <span id="shortcut-kind">Internet shortcut</span>
+        </div>
+      </div>
+      <div class="shortcut-details">
+        <div><span>Name:</span><strong id="shortcut-detail-name"></strong></div>
+        <div><span>Target:</span><code id="shortcut-target"></code></div>
+        <div><span>Type:</span><span id="shortcut-detail-type"></span></div>
+        <div><span>Category:</span><span id="shortcut-category"></span></div>
+        <p id="shortcut-description" class="shortcut-description"></p>
+      </div>
+    </div>
+    <div class="shortcut-actions">
+      <button id="shortcut-open" class="default-button" type="button">Open</button>
+      <button id="shortcut-new-window" type="button">Open in New Window</button>
+      <button id="shortcut-copy" type="button">Copy Link</button>
+      <button id="shortcut-cancel" type="button">Cancel</button>
+    </div>
+  </div>
+</div>
+
 <script src="app.js" defer></script>
 </body>
 </html>
