@@ -78,7 +78,7 @@
     }
   }
 
-  function openTarget(item, newWindow = true) {
+  function openTarget(item, newWindow = false) {
     if (!item) return;
     if (/^https?:/i.test(item.url)) {
       if (newWindow) window.open(item.url, '_blank', 'noopener');
@@ -151,7 +151,7 @@
       if (!modal.hidden) closeShortcutModal();
     }
     if (!modal.hidden && event.key === 'Enter' && document.activeElement === openButton) {
-      openTarget(selectedItem, true);
+      openTarget(selectedItem, false);
     }
   });
 
@@ -171,7 +171,7 @@
     const item = catalogItems.get(icon.dataset.shortcutId);
     if (!item) return;
     closeShortcutModal();
-    openTarget(item, true);
+    openTarget(item, false);
   });
 
   desktop.addEventListener('contextmenu', event => {
@@ -194,7 +194,7 @@
 
   closeButton.addEventListener('click', closeShortcutModal);
   cancelButton.addEventListener('click', closeShortcutModal);
-  openButton.addEventListener('click', () => openTarget(selectedItem, true));
+  openButton.addEventListener('click', () => openTarget(selectedItem, false));
   newWindowButton.addEventListener('click', () => openTarget(selectedItem, true));
   copyButton.addEventListener('click', async () => {
     if (!selectedItem) return;
