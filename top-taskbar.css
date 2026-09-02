@@ -1,6 +1,25 @@
-/* Windows 98: top-docked taskbar mode */
+/* Windows 98 top-docked taskbar */
 .desktop{inset:28px 0 0!important}
 .taskbar{top:0!important;bottom:auto!important;border-top:0!important;border-bottom:1px solid #fff!important}
 .start-menu{top:27px!important;bottom:auto!important}
-@media(max-width:700px){.desktop{inset:38px 0 0!important}.taskbar{top:0!important;bottom:auto!important}.start-menu{top:37px!important;bottom:auto!important}}
-@media(max-width:420px){.desktop{inset:42px 0 0!important}.taskbar{top:0!important;bottom:auto!important}.start-menu{top:41px!important;bottom:auto!important}.submenu{top:42px!important}}
+
+/* Shared desktop/menu icon language */
+.icon-link:before{content:"@";position:absolute;left:2px;top:1px;width:26px;height:26px;background:#fff;color:#000;border:2px solid #000;text-align:center;font:bold 20px/25px Arial;box-shadow:inset 2px 2px #dfdfdf,inset -2px -2px #808080}
+.icon-small{width:16px!important;height:16px!important;transform:scale(.72);transform-origin:center}
+.menu-icon{width:24px!important;height:24px!important;flex:0 0 24px!important}
+
+.start-item,.submenu a,.quick-button{color:#000;text-decoration:none}
+.start-item:hover,.submenu a:hover{background:#000080;color:#fff}
+.submenu a{width:100%;height:29px;padding:2px 5px;border:1px solid transparent;background:#c0c0c0;text-align:left;display:flex;align-items:center;gap:6px}
+
+@media(max-width:700px){
+  .desktop{inset:38px 0 0!important}
+  .taskbar{top:0!important;bottom:auto!important}
+  .start-menu{top:37px!important;bottom:auto!important}
+}
+@media(max-width:420px){
+  .desktop{inset:42px 0 0!important}
+  .taskbar{top:0!important;bottom:auto!important}
+  .start-menu{top:41px!important;bottom:auto!important}
+  .submenu{top:42px!important;left:4px!important;width:calc(100vw - 8px)!important}
+}
