@@ -1,0 +1,9 @@
+{
+  "version": 1,
+  "updated": "2026-09-02",
+  "links": [
+    {"id":"github-okenice26","title":"Okenice26","url":"https://github.com/VICSRJ/okenice26","category":"Projekty","tags":["github","web","95css"],"description":"Hlavní repozitář a web Okenice26."},
+    {"id":"github-95css","title":"95CSS","url":"https://github.com/YoshiMannaert/95CSS","category":"Reference","tags":["css","windows95","ui"],"description":"CSS framework použitý jako vizuální základ."},
+    {"id":"github-vicsrj","title":"VICSRJ / GitHub","url":"https://github.com/VICSRJ","category":"Profil","tags":["github","vicsrj"],"description":"Profil a další repozitáře."}
+  ]
+}
