@@ -1,75 +1,93 @@
 <!doctype html>
-<html lang="cs">
+<html lang="en">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#008080">
-<meta name="description" content="Okenice26 — webový desktop ve stylu Windows 95/98.">
-<title>Okenice26 — Windows 95 Desktop</title>
+<meta name="description" content="Okenice26 — Windows 98 desktop recreation.">
+<title>Okenice26 — Windows 98</title>
 <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-<div id="desktop" class="desktop" tabindex="0" aria-label="Desktop Windows 95">
-  <div class="desktop-icons" id="desktop-icons">
-    <button class="desktop-icon" data-app="computer" type="button"><span class="icon-art icon-computer" aria-hidden="true"></span><span>My Computer</span></button>
-    <button class="desktop-icon" data-app="documents" type="button"><span class="icon-art icon-folder" aria-hidden="true"></span><span>My Documents</span></button>
-    <button class="desktop-icon" data-app="network" type="button"><span class="icon-art icon-network" aria-hidden="true"></span><span>Network Neighborhood</span></button>
-    <button class="desktop-icon" data-app="recycle" type="button"><span class="icon-art icon-trash" aria-hidden="true"></span><span>Recycle Bin</span></button>
-    <button class="desktop-icon" data-app="about" type="button"><span class="icon-art icon-notepad" aria-hidden="true"></span><span>Okenice26</span></button>
+<div id="desktop" class="desktop" tabindex="0" aria-label="Windows 98 Desktop">
+  <div id="desktop-icons" class="desktop-icons">
+    <button class="desktop-icon" data-app="computer" type="button"><span class="icon-art icon-computer"></span><span>My Computer</span></button>
+    <button class="desktop-icon" data-app="documents" type="button"><span class="icon-art icon-folder"></span><span>My Documents</span></button>
+    <button class="desktop-icon" data-app="network" type="button"><span class="icon-art icon-network"></span><span>Network Neighborhood</span></button>
+    <button class="desktop-icon" data-app="internet" type="button"><span class="icon-art icon-ie"></span><span>Internet Explorer</span></button>
+    <button class="desktop-icon" data-app="recycle" type="button"><span class="icon-art icon-trash"></span><span>Recycle Bin</span></button>
   </div>
-  <div class="windows-layer" id="windows-layer"></div>
+  <div id="windows-layer" class="windows-layer"></div>
 
-  <div class="context-menu" id="context-menu" hidden>
-    <button type="button" data-menu-action="arrange">Arrange Icons</button>
-    <button type="button" data-menu-action="refresh">Refresh</button>
-    <div class="menu-line"></div>
-    <button type="button" data-menu-action="new">New ▸</button>
-    <div class="menu-line"></div>
-    <button type="button" data-menu-action="properties">Properties</button>
-  </div>
-</div>
-
-<div class="taskbar" id="taskbar">
-  <button class="start-button" id="start-button" type="button" aria-expanded="false" aria-controls="start-menu"><span class="windows-flag" aria-hidden="true"></span><strong>Start</strong></button>
-  <div class="taskbar-divider" aria-hidden="true"></div>
-  <div class="quick-launch" aria-label="Quick Launch">
-    <button type="button" class="quick-button" data-app="computer" aria-label="My Computer"><span class="mini-icon computer-mini"></span></button>
-    <button type="button" class="quick-button" data-app="documents" aria-label="My Documents"><span class="mini-icon folder-mini"></span></button>
-  </div>
-  <div class="task-buttons" id="task-buttons" aria-label="Open windows"></div>
-  <div class="tray"><span class="speaker" aria-hidden="true"></span><span class="tray-clock" id="clock">12:00</span></div>
-
-  <div class="start-menu" id="start-menu" hidden>
-    <div class="start-brand"><span class="brand-flag"></span><span><strong>Windows</strong><b>98</b></span></div>
-    <div class="start-content">
-      <div class="start-column">
-        <button type="button" data-app="computer"><span class="menu-icon computer-mini"></span><span>My Computer</span></button>
-        <button type="button" data-app="documents"><span class="menu-icon folder-mini"></span><span>My Documents</span></button>
-        <button type="button" data-app="network"><span class="menu-icon network-mini"></span><span>Network Neighborhood</span></button>
-        <button type="button" data-app="recycle"><span class="menu-icon trash-mini"></span><span>Recycle Bin</span></button>
-      </div>
-      <div class="start-column">
-        <button type="button" data-app="about"><span class="menu-icon notepad-mini"></span><span>Okenice26</span></button>
-        <button type="button" data-app="notepad"><span class="menu-icon notepad-mini"></span><span>Notepad</span></button>
-        <button type="button" data-app="internet"><span class="menu-icon ie-mini"></span><span>Internet Explorer</span></button>
-        <div class="menu-line"></div>
-        <button type="button" data-menu-action="run"><span class="menu-icon run-mini"></span><span>Run...</span></button>
-      </div>
-    </div>
-    <div class="start-footer">
-      <button type="button" data-menu-action="shutdown"><span class="menu-icon shutdown-mini"></span><span>Shut Down...</span></button>
-    </div>
+  <div id="context-menu" class="context-menu" hidden>
+    <button data-context="arrange">Arrange Icons</button>
+    <button data-context="refresh">Refresh</button>
+    <div class="menu-separator"></div>
+    <button data-context="new">New <span class="submenu-arrow">▶</span></button>
+    <div class="menu-separator"></div>
+    <button data-context="properties">Properties</button>
   </div>
 </div>
 
-<div class="shutdown-overlay" id="shutdown-overlay" hidden>
-  <div class="shutdown-dialog">
-    <div class="dialog-title">Shut Down Windows</div>
-    <div class="dialog-body">
-      <div class="shutdown-icon">⏻</div>
-      <div><strong>What do you want the computer to do?</strong><label><input type="radio" name="shutdown" checked> Shut down</label><label><input type="radio" name="shutdown"> Restart</label><label><input type="radio" name="shutdown"> Stand by</label></div>
+<footer id="taskbar" class="taskbar">
+  <button id="start-button" class="start-button" type="button" aria-expanded="false" aria-controls="start-menu"><span class="windows-logo"></span><strong>Start</strong></button>
+  <div class="taskbar-splitter"></div>
+  <div class="quick-launch">
+    <button class="quick-button" data-app="internet" aria-label="Internet Explorer"><span class="small-icon ie-small"></span></button>
+    <button class="quick-button" data-app="computer" aria-label="My Computer"><span class="small-icon computer-small"></span></button>
+    <button class="quick-button" data-app="notepad" aria-label="Notepad"><span class="small-icon note-small"></span></button>
+  </div>
+  <div id="task-buttons" class="task-buttons"></div>
+  <div class="tray">
+    <span class="tray-icon speaker-icon" aria-hidden="true"></span>
+    <time id="clock">12:00 PM</time>
+  </div>
+
+  <div id="start-menu" class="start-menu" hidden>
+    <div class="start-side"><span>Windows</span><b>98</b></div>
+    <div class="start-main">
+      <button class="start-item has-submenu" data-submenu="programs"><span class="menu-art folder-art"></span><span>Programs</span><span>▶</span></button>
+      <button class="start-item has-submenu" data-submenu="favorites"><span class="menu-art star-art"></span><span>Favorites</span><span>▶</span></button>
+      <button class="start-item has-submenu" data-submenu="documents"><span class="menu-art document-art"></span><span>Documents</span><span>▶</span></button>
+      <button class="start-item has-submenu" data-submenu="settings"><span class="menu-art settings-art"></span><span>Settings</span><span>▶</span></button>
+      <button class="start-item" data-menu-app="find"><span class="menu-art find-art"></span><span>Find</span></button>
+      <button class="start-item" data-menu-app="help"><span class="menu-art help-art">?</span><span>Help</span></button>
+      <button class="start-item" data-menu-app="run"><span class="menu-art run-art"></span><span>Run...</span></button>
+      <div class="menu-separator"></div>
+      <button class="start-item" data-menu-action="shutdown"><span class="menu-art shutdown-art">⏻</span><span>Shut Down...</span></button>
     </div>
-    <div class="dialog-actions"><button type="button" id="shutdown-cancel">Cancel</button><button type="button" id="shutdown-ok">OK</button></div>
+    <div class="submenu" data-submenu-panel="programs" hidden>
+      <button data-app="notepad"><span class="menu-art note-art"></span><span>Notepad</span></button>
+      <button data-app="internet"><span class="menu-art ie-art"></span><span>Internet Explorer</span></button>
+      <button data-app="calculator"><span class="menu-art calc-art"></span><span>Calculator</span></button>
+      <button data-app="solitaire"><span class="menu-art card-art"></span><span>Solitaire</span></button>
+    </div>
+    <div class="submenu" data-submenu-panel="favorites" hidden>
+      <button data-app="about"><span class="menu-art star-art"></span><span>Okenice26</span></button>
+    </div>
+    <div class="submenu" data-submenu-panel="documents" hidden>
+      <button data-app="documents"><span class="menu-art document-art"></span><span>My Documents</span></button>
+    </div>
+    <div class="submenu" data-submenu-panel="settings" hidden>
+      <button data-app="control"><span class="menu-art settings-art"></span><span>Control Panel</span></button>
+      <button data-menu-action="taskbar"><span class="menu-art settings-art"></span><span>Taskbar &amp; Start Menu</span></button>
+    </div>
+  </div>
+</footer>
+
+<div id="shutdown-overlay" class="shutdown-overlay" hidden>
+  <div class="shutdown-box">
+    <div class="titlebar-static">Shut Down Windows</div>
+    <div class="shutdown-content">
+      <div class="shutdown-symbol">⏻</div>
+      <div class="shutdown-copy">
+        <strong>What do you want the computer to do?</strong>
+        <label><input type="radio" name="shutdown" checked> Shut down</label>
+        <label><input type="radio" name="shutdown"> Restart</label>
+        <label><input type="radio" name="shutdown"> Stand by</label>
+      </div>
+    </div>
+    <div class="dialog-buttons"><button id="shutdown-ok">OK</button><button id="shutdown-cancel">Cancel</button></div>
   </div>
 </div>
 
