@@ -1,9 +1,18 @@
 {
-  "version": 1,
+  "version": 2,
   "updated": "2026-09-02",
-  "links": [
-    {"id":"github-okenice26","title":"Okenice26","url":"https://github.com/VICSRJ/okenice26","category":"Projekty","tags":["github","web","95css"],"description":"Hlavní repozitář a web Okenice26."},
-    {"id":"github-95css","title":"95CSS","url":"https://github.com/YoshiMannaert/95CSS","category":"Reference","tags":["css","windows95","ui"],"description":"CSS framework použitý jako vizuální základ."},
-    {"id":"github-vicsrj","title":"VICSRJ / GitHub","url":"https://github.com/VICSRJ","category":"Profil","tags":["github","vicsrj"],"description":"Profil a další repozitáře."}
-  ]
+  "desktop": [
+    {"id":"google","title":"Google","type":"app","url":"https://www.google.com/","icon":"icons/google.icon.svg","category":"Web"},
+    {"id":"google-cz","title":"Google.cz","type":"app","url":"https://www.google.cz/","icon":"icons/google-cz.icon.svg","category":"Web"},
+    {"id":"search","title":"Vyhledávač","type":"app","url":"https://www.google.com/search","icon":"icons/search.icon.svg","category":"Web"},
+    {"id":"github","title":"GitHub","type":"app","url":"https://github.com/VICSRJ","icon":"icons/github.icon.svg","category":"Web"},
+    {"id":"projects","title":"Projects","type":"folder","url":"#projects","category":"Folders"},
+    {"id":"links","title":"Links","type":"folder","url":"#links","category":"Folders"}
+  ],
+  "menus": {
+    "programs": ["google","google-cz","search","github"],
+    "favorites": ["google","google-cz","search"],
+    "documents": ["projects","links"],
+    "settings": ["links"]
+  }
 }
