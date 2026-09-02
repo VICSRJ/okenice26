@@ -24,6 +24,7 @@
   const cancelButton = document.getElementById('shortcut-cancel');
   const catalogUrl = 'data/links.json';
 
+  const DOUBLE_CLICK_DELAY = 320;
   let catalogItems = new Map();
   let selectedItem = null;
   let clickTimer = null;
@@ -81,7 +82,7 @@
   function openTarget(item, newWindow = false) {
     if (!item) return;
     if (/^https?:/i.test(item.url)) {
-      if (newWindow) window.open(item.url, '_blank', 'noopener');
+      if (newWindow) window.open(item.url, '_blank', 'noopener,noreferrer');
       else window.location.href = item.url;
       return;
     }
@@ -113,6 +114,7 @@
   function closeShortcutModal() {
     modal.hidden = true;
     selectedItem = null;
+    icons.querySelectorAll('.desktop-icon.selected').forEach(node => node.classList.remove('selected'));
   }
 
   start.addEventListener('click', event => {
@@ -160,7 +162,7 @@
     if (!icon) return;
     event.preventDefault();
     window.clearTimeout(clickTimer);
-    clickTimer = window.setTimeout(() => selectDesktopShortcut(icon), 190);
+    clickTimer = window.setTimeout(() => selectDesktopShortcut(icon), DOUBLE_CLICK_DELAY);
   });
 
   icons.addEventListener('dblclick', event => {
@@ -170,7 +172,7 @@
     window.clearTimeout(clickTimer);
     const item = catalogItems.get(icon.dataset.shortcutId);
     if (!item) return;
-    closeShortcutModal();
+    selectedItem = item;
     openTarget(item, false);
   });
 
