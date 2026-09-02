@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#008080">
-<meta name="description" content="Okenice26 — Windows 98 desktop recreation.">
+<meta name="description" content="Windows 98 style desktop template for links and folders.">
 <title>Microsoft Windows 98 — Okenice26</title>
 <link rel="stylesheet" href="styles.css">
 <link rel="stylesheet" href="top-taskbar.css">
@@ -12,71 +12,65 @@
 <body>
 <main id="desktop" class="desktop" tabindex="0" aria-label="Windows 98 Desktop">
   <div id="desktop-icons" class="desktop-icons">
-    <button class="desktop-icon" data-app="computer" type="button"><span class="icon-art icon-computer"></span><span>My Computer</span></button>
-    <button class="desktop-icon" data-app="documents" type="button"><span class="icon-art icon-folder"></span><span>My Documents</span></button>
-    <button class="desktop-icon" data-app="network" type="button"><span class="icon-art icon-network"></span><span>Network Neighborhood</span></button>
-    <button class="desktop-icon" data-app="internet" type="button"><span class="icon-art icon-ie"></span><span>Internet Explorer</span></button>
-    <button class="desktop-icon" data-app="recycle" type="button"><span class="icon-art icon-trash"></span><span>Recycle Bin</span></button>
+    <a class="desktop-icon" href="https://github.com/VICSRJ/okenice26" target="_blank" rel="noopener"><span class="icon-art icon-link"></span><span>Okenice26</span></a>
+    <a class="desktop-icon" href="#folders"><span class="icon-art icon-folder"></span><span>My Documents</span></a>
+    <a class="desktop-icon" href="#projects"><span class="icon-art icon-folder"></span><span>Projects</span></a>
+    <a class="desktop-icon" href="https://www.microsoft.com/" target="_blank" rel="noopener"><span class="icon-art icon-link"></span><span>Internet</span></a>
+    <a class="desktop-icon" href="#recycle"><span class="icon-art icon-trash"></span><span>Recycle Bin</span></a>
   </div>
-  <div id="windows-layer" class="windows-layer"></div>
   <div id="context-menu" class="context-menu" hidden>
-    <button data-context="arrange">Arrange Icons</button>
-    <button data-context="lineup">Line up Icons</button>
-    <button data-context="refresh">Refresh</button>
+    <button type="button" data-context="arrange">Arrange Icons</button>
+    <button type="button" data-context="lineup">Line up Icons</button>
+    <button type="button" data-context="refresh">Refresh</button>
     <div class="menu-separator"></div>
-    <button data-context="new">New <span class="submenu-arrow">▶</span></button>
+    <button type="button" data-context="new">New <span class="submenu-arrow">▶</span></button>
     <div class="menu-separator"></div>
-    <button data-context="properties">Properties</button>
+    <button type="button" data-context="properties">Properties</button>
   </div>
 </main>
+
 <footer id="taskbar" class="taskbar">
   <button id="start-button" class="start-button" type="button" aria-expanded="false" aria-controls="start-menu"><span class="windows-logo" aria-hidden="true"></span><strong>Start</strong></button>
   <div class="taskbar-divider" aria-hidden="true"></div>
   <div class="quick-launch" aria-label="Quick Launch">
-    <button class="quick-button" data-app="internet" aria-label="Internet Explorer"><span class="small-icon ie-small"></span></button>
-    <button class="quick-button" data-app="computer" aria-label="My Computer"><span class="small-icon computer-small"></span></button>
-    <button class="quick-button" data-app="notepad" aria-label="Notepad"><span class="small-icon note-small"></span></button>
+    <a class="quick-button" href="https://github.com/VICSRJ/okenice26" target="_blank" rel="noopener" aria-label="Okenice26"><span class="icon-art icon-link icon-small"></span></a>
+    <a class="quick-button" href="#folders" aria-label="My Documents"><span class="icon-art icon-folder icon-small"></span></a>
   </div>
   <div class="taskbar-divider quick-divider" aria-hidden="true"></div>
-  <div id="task-buttons" class="task-buttons"></div>
+  <div class="task-buttons" aria-hidden="true"></div>
   <div class="tray"><span class="tray-status" aria-hidden="true"><span class="tray-speaker"></span></span><time id="clock">12:00 PM</time></div>
+
   <div id="start-menu" class="start-menu" hidden>
     <div class="start-banner"><span>Microsoft</span><strong>Windows 98</strong></div>
     <div class="start-items">
-      <button class="start-item" data-submenu="programs"><span class="menu-art programs-art"></span><span class="item-label"><u>P</u>rograms</span><span class="cascade">▶</span></button>
-      <button class="start-item" data-submenu="favorites"><span class="menu-art favorites-art"></span><span class="item-label"><u>F</u>avorites</span><span class="cascade">▶</span></button>
-      <button class="start-item" data-submenu="documents"><span class="menu-art documents-art"></span><span class="item-label"><u>D</u>ocuments</span><span class="cascade">▶</span></button>
-      <button class="start-item" data-submenu="settings"><span class="menu-art settings-art"></span><span class="item-label"><u>S</u>ettings</span><span class="cascade">▶</span></button>
-      <button class="start-item" data-menu-action="find"><span class="menu-art find-art"></span><span class="item-label">F<u>i</u>nd</span></button>
-      <button class="start-item" data-menu-action="help"><span class="menu-art help-art">?</span><span class="item-label">Help</span></button>
-      <button class="start-item" data-menu-action="run"><span class="menu-art run-art"></span><span class="item-label">Run...</span></button>
+      <a class="start-item" href="#programs"><span class="icon-art icon-folder menu-icon"></span><span class="item-label"><u>P</u>rograms</span><span class="cascade">▶</span></a>
+      <a class="start-item" href="#favorites"><span class="icon-art icon-folder menu-icon"></span><span class="item-label"><u>F</u>avorites</span><span class="cascade">▶</span></a>
+      <a class="start-item" href="#folders"><span class="icon-art icon-folder menu-icon"></span><span class="item-label"><u>D</u>ocuments</span><span class="cascade">▶</span></a>
+      <a class="start-item" href="#settings"><span class="icon-art icon-folder menu-icon"></span><span class="item-label"><u>S</u>ettings</span><span class="cascade">▶</span></a>
+      <a class="start-item" href="#find"><span class="icon-art icon-link menu-icon"></span><span class="item-label">F<u>i</u>nd</span></a>
+      <a class="start-item" href="#help"><span class="icon-art icon-link menu-icon"></span><span class="item-label">Help</span></a>
+      <a class="start-item" href="#run"><span class="icon-art icon-link menu-icon"></span><span class="item-label">Run...</span></a>
       <div class="menu-separator"></div>
-      <button class="start-item" data-menu-action="shutdown"><span class="menu-art shutdown-art"></span><span class="item-label">Shut Down...</span></button>
+      <a class="start-item" href="#shutdown"><span class="icon-art icon-link menu-icon"></span><span class="item-label">Shut Down...</span></a>
     </div>
     <div class="submenu" data-submenu-panel="programs" hidden>
-      <button data-app="notepad"><span class="menu-art note-art"></span><span>Notepad</span></button>
-      <button data-app="internet"><span class="menu-art ie-art"></span><span>Internet Explorer</span></button>
-      <button data-app="calculator"><span class="menu-art calc-art"></span><span>Calculator</span></button>
-      <button data-app="solitaire"><span class="menu-art card-art"></span><span>Solitaire</span></button>
+      <a href="https://github.com/VICSRJ/okenice26" target="_blank" rel="noopener"><span class="icon-art icon-link menu-icon"></span><span>Okenice26</span></a>
+      <a href="#projects"><span class="icon-art icon-folder menu-icon"></span><span>Projects</span></a>
+      <a href="https://www.microsoft.com/" target="_blank" rel="noopener"><span class="icon-art icon-link menu-icon"></span><span>Internet</span></a>
     </div>
-    <div class="submenu" data-submenu-panel="favorites" hidden><button data-app="about"><span class="menu-art star-art"></span><span>Okenice26</span></button></div>
-    <div class="submenu" data-submenu-panel="documents" hidden><button data-app="documents"><span class="menu-art document-art"></span><span>My Documents</span></button></div>
+    <div class="submenu" data-submenu-panel="favorites" hidden>
+      <a href="https://github.com/VICSRJ/okenice26" target="_blank" rel="noopener"><span class="icon-art icon-link menu-icon"></span><span>Okenice26</span></a>
+    </div>
+    <div class="submenu" data-submenu-panel="documents" hidden>
+      <a href="#folders"><span class="icon-art icon-folder menu-icon"></span><span>My Documents</span></a>
+      <a href="#projects"><span class="icon-art icon-folder menu-icon"></span><span>Projects</span></a>
+    </div>
     <div class="submenu" data-submenu-panel="settings" hidden>
-      <button data-app="control"><span class="menu-art settings-art"></span><span>Control Panel</span></button>
-      <button data-menu-action="taskbar"><span class="menu-art settings-art"></span><span>Taskbar &amp; Start Menu</span></button>
+      <a href="#settings"><span class="icon-art icon-folder menu-icon"></span><span>Settings</span></a>
+      <a href="#links"><span class="icon-art icon-link menu-icon"></span><span>Links</span></a>
     </div>
   </div>
 </footer>
-<div id="shutdown-overlay" class="shutdown-overlay" hidden>
-  <div class="shutdown-dialog" role="dialog" aria-modal="true" aria-labelledby="shutdown-title">
-    <div class="dialog-title" id="shutdown-title"><span class="dialog-windows-mark"></span> Shut Down Windows</div>
-    <div class="dialog-body">
-      <div class="shutdown-icon" aria-hidden="true"></div>
-      <div class="shutdown-copy"><strong>What do you want the computer to do?</strong><label><input type="radio" name="shutdown" checked> Shut down</label><label><input type="radio" name="shutdown"> Restart</label><label><input type="radio" name="shutdown"> Stand by</label></div>
-    </div>
-    <div class="dialog-actions"><button id="shutdown-ok" class="default-button">OK</button><button id="shutdown-cancel">Cancel</button><button>Help</button></div>
-  </div>
-</div>
 <script src="app.js" defer></script>
 </body>
 </html>
