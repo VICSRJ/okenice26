@@ -1,1 +1,0 @@
-Shortcut interaction model: single click selects and opens the Windows 98-style shortcut information modal; double click bypasses the modal and opens the target directly. Start menu items remain normal links.
