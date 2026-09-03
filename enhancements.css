@@ -1,0 +1,126 @@
+/* Win98 polish layer: dimensional shadows, restrained motion and hierarchy tree. */
+
+.start-menu{
+  position:fixed!important;
+  left:3px!important;
+  top:27px!important;
+  bottom:auto!important;
+  transform-origin:12px 0;
+  box-shadow:1px 1px #fff,2px 2px #404040,3px 3px 0 rgba(0,0,0,.35)!important;
+  animation:startMenuIn .10s steps(2,end);
+}
+
+.start-item,.menu-shortcut,.tree-row,.desktop-icon,.quick-button,.start-button{
+  transition:background-color .08s steps(2,end),color .08s steps(2,end),transform .08s ease,box-shadow .08s ease;
+}
+
+.start-item:hover,.menu-shortcut:hover,.tree-row:hover{transform:translateX(1px)}
+.start-item:active,.menu-shortcut:active,.tree-row:active{transform:translate(1px,1px)}
+
+.desktop-icon{
+  transition:background-color .08s steps(2,end),color .08s steps(2,end),transform .12s ease,filter .12s ease;
+}
+.desktop-icon:hover{filter:drop-shadow(1px 1px 0 rgba(0,0,0,.5))}
+.desktop-icon.selected{box-shadow:inset 1px 1px rgba(255,255,255,.15),inset -1px -1px rgba(0,0,0,.25)}
+
+.shortcut-modal[hidden]{display:none}
+.shortcut-modal:not([hidden]){animation:modalFadeIn .12s steps(2,end)}
+.shortcut-dialog{box-shadow:2px 2px #000,3px 3px 0 rgba(0,0,0,.28),inset 1px 1px #fff,inset -1px -1px #404040}
+
+.hierarchy-tree{
+  position:absolute;
+  left:4px;
+  top:7px;
+  bottom:7px;
+  width:228px;
+  background:#c0c0c0;
+  border:1px solid #000;
+  box-shadow:1px 1px #fff,2px 2px #404040,3px 3px 0 rgba(0,0,0,.28),inset 1px 1px #dfdfdf,inset -1px -1px #808080;
+  display:flex;
+  flex-direction:column;
+  z-index:10;
+  opacity:0;
+  transform:translateX(-8px);
+  pointer-events:none;
+  transition:opacity .12s ease,transform .12s ease;
+}
+.hierarchy-tree.is-visible{opacity:1;transform:translateX(0);pointer-events:auto}
+.hierarchy-titlebar{
+  height:21px;
+  min-height:21px;
+  padding:2px 4px;
+  display:flex;
+  align-items:center;
+  gap:5px;
+  color:#fff;
+  background:#000080;
+  box-shadow:inset 1px 1px rgba(255,255,255,.18),inset -1px -1px rgba(0,0,0,.25);
+  font:700 11px "MS Sans Serif",Tahoma,Arial,sans-serif;
+}
+.hierarchy-title-icon{width:12px;height:12px;position:relative;display:block;flex:0 0 12px}
+.hierarchy-title-icon:before{content:"";position:absolute;left:1px;top:3px;width:9px;height:7px;background:#ffff00;border:1px solid #000}
+.hierarchy-title-icon:after{content:"";position:absolute;left:2px;top:1px;width:4px;height:3px;background:#ffff00;border:1px solid #000;border-bottom:0}
+.hierarchy-body{
+  flex:1;
+  min-height:0;
+  overflow:auto;
+  padding:4px 3px 8px;
+  background:#fff;
+  border-top:1px solid #808080;
+  scrollbar-width:auto;
+}
+.tree-root,.tree-row{
+  width:100%;
+  min-height:19px;
+  height:19px;
+  padding:1px 3px;
+  border:1px solid transparent;
+  background:transparent;
+  color:#000;
+  display:flex;
+  align-items:center;
+  gap:3px;
+  text-align:left;
+  font:11px "MS Sans Serif",Tahoma,Arial,sans-serif;
+  white-space:nowrap;
+  overflow:hidden;
+}
+.tree-root:hover,.tree-row:hover{background:#000080;color:#fff}
+.tree-node{position:relative;padding:0}
+.tree-node:not(:first-child) .tree-row:before,
+.tree-node .tree-row:after{content:"";position:absolute;pointer-events:none}
+.tree-node .tree-row:after{left:calc(var(--tree-depth) * 14px + 8px);top:-1px;bottom:-1px;border-left:1px dotted #808080;z-index:0}
+.tree-children{display:grid;grid-template-rows:0fr;overflow:hidden;transition:grid-template-rows .12s steps(3,end);position:relative}
+.tree-children.is-open{grid-template-rows:1fr}
+.tree-children>.tree-node{min-height:0;overflow:hidden}
+.tree-children.is-open>.tree-node{min-height:19px}
+.tree-expander{
+  width:11px;height:11px;min-width:11px;display:inline-grid;place-items:center;
+  background:#c0c0c0;color:#000;border:1px solid #404040;box-shadow:inset 1px 1px #fff,inset -1px -1px #808080;
+  font:11px/9px "MS Sans Serif",Tahoma,Arial,sans-serif;z-index:2;
+}
+.tree-expander-empty{border-color:transparent;background:transparent;box-shadow:none}
+.tree-small-icon{width:13px;height:13px;min-width:13px;position:relative;z-index:2}
+.tree-desktop-icon:before{content:"";position:absolute;left:1px;top:2px;width:10px;height:8px;background:#c0c0c0;border:1px solid #000}
+.tree-desktop-icon:after{content:"";position:absolute;left:3px;top:10px;width:6px;height:2px;background:#c0c0c0;border:1px solid #000;border-top:0}
+.tree-folder-icon:before{content:"";position:absolute;left:0;top:4px;width:12px;height:8px;background:#ffff00;border:1px solid #000}
+.tree-folder-icon:after{content:"";position:absolute;left:1px;top:2px;width:5px;height:3px;background:#ffff00;border:1px solid #000;border-bottom:0}
+.tree-label{position:relative;z-index:2;overflow:hidden;text-overflow:ellipsis;min-width:0}
+.tree-node.is-current>.tree-row{background:#000080;color:#fff}
+.tree-node.is-path:not(.is-current)>.tree-row{background:#dfdfdf}
+.tree-node.is-current>.tree-row:before{content:"";position:absolute;left:0;right:0;top:0;bottom:0;box-shadow:inset 1px 1px rgba(255,255,255,.15),inset -1px -1px rgba(0,0,0,.25);pointer-events:none}
+
+/* When the hierarchy is visible, leave the desktop icons their own clear workspace. */
+.hierarchy-tree.is-visible ~ #desktop-icons{left:242px;transition:left .12s ease}
+
+@keyframes startMenuIn{from{opacity:0;transform:scaleY(.96) translateY(-2px)}to{opacity:1;transform:scaleY(1) translateY(0)}}
+@keyframes modalFadeIn{from{opacity:0}to{opacity:1}}
+
+@media(max-width:700px){
+  .hierarchy-tree{left:3px;right:3px;width:auto;bottom:4px;max-height:42vh}
+  .hierarchy-tree.is-visible ~ #desktop-icons{left:7px}
+}
+
+@media(prefers-reduced-motion:reduce){
+  .start-menu,.shortcut-modal:not([hidden]),.hierarchy-tree,.tree-children,.desktop-icon,.start-item,.menu-shortcut,.tree-row,.quick-button,.start-button{animation:none!important;transition:none!important}
+}
