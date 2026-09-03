@@ -21,7 +21,9 @@
   const folders = () => [...items.values()].filter(item => item?.type === 'folder');
   const childrenOf = id => {
     const item = items.get(id);
-    return Array.isArray(item?.children) ? item.children.map(child => items.get(child)).filter(child => child?.type === 'folder') : [];
+    return Array.isArray(item?.children)
+      ? item.children.map(child => items.get(child)).filter(child => child?.type === 'folder')
+      : [];
   };
 
   function pathIds(id) {
@@ -37,15 +39,22 @@
   }
 
   function buildRelations(catalog) {
-    items = new Map((Array.isArray(catalog.items) ? catalog.items : []).map(item => [item.id, item]));
+    const source = Array.isArray(catalog.items) ? catalog.items : [];
+    items = new Map(source.map(item => [item.id, item]));
     parents = new Map();
-    items.forEach(item => {
+
+    source.forEach(item => {
+      if (item?.id && item?.parent) parents.set(item.id, item.parent);
+    });
+
+    source.forEach(item => {
       if (item?.type !== 'folder' || !Array.isArray(item.children)) return;
-      item.children.forEach(child => {
-        const childItem = items.get(child);
-        if (childItem?.type === 'folder' && !parents.has(child)) parents.set(child, item.id);
+      item.children.forEach(childId => {
+        const child = items.get(childId);
+        if (child?.type === 'folder' && !parents.has(childId)) parents.set(childId, item.id);
       });
     });
+
     const desktopIds = Array.isArray(catalog.desktop) ? catalog.desktop : [];
     roots = desktopIds.map(id => items.get(id)).filter(item => item?.type === 'folder');
   }
@@ -53,6 +62,7 @@
   function createPane() {
     let pane = document.getElementById('hierarchy-tree');
     if (pane) return pane;
+
     pane = document.createElement('aside');
     pane.id = 'hierarchy-tree';
     pane.className = 'hierarchy-tree is-visible';
@@ -70,6 +80,7 @@
         </button>
         <div class="tree-root-children"></div>
       </div>`;
+
     desktop.appendChild(pane);
     pane.querySelector('[data-tree-root]')?.addEventListener('click', () => navigateToFolder(null));
     return pane;
@@ -80,6 +91,7 @@
     const isOpen = expanded.has(item.id);
     const isCurrent = currentFolderId === item.id;
     const isInPath = currentFolderId ? pathIds(currentFolderId).includes(item.id) : false;
+
     return `
       <div class="tree-node ${isCurrent ? 'is-current' : ''} ${isInPath ? 'is-path' : ''}" data-tree-node="${esc(item.id)}" style="--tree-depth:${depth}">
         <button class="tree-row" type="button" data-tree-folder="${esc(item.id)}" aria-current="${isCurrent ? 'page' : 'false'}" aria-expanded="${hasChildren ? String(isOpen) : 'false'}">
@@ -89,6 +101,10 @@
         </button>
         ${hasChildren ? `<div class="tree-children ${isOpen ? 'is-open' : ''}" data-tree-children="${esc(item.id)}">${childrenOf(item.id).map(child => folderButton(child, depth + 1)).join('')}</div>` : ''}
       </div>`;
+  }
+
+  function visibleFolderButtons(pane) {
+    return [...pane.querySelectorAll('[data-tree-folder]')].filter(button => button.closest('.tree-children')?.classList.contains('is-open') !== false);
   }
 
   function render() {
@@ -106,6 +122,7 @@
       button.addEventListener('click', event => {
         const id = event.currentTarget.dataset.treeFolder;
         const hasChildren = childrenOf(id).length > 0;
+
         if (hasChildren) {
           expanded.has(id) ? expanded.delete(id) : expanded.add(id);
           const node = pane.querySelector(`[data-tree-node="${CSS.escape(id)}"]`);
@@ -113,9 +130,14 @@
           children?.classList.toggle('is-open', expanded.has(id));
           event.currentTarget.setAttribute('aria-expanded', String(expanded.has(id)));
         }
+
         if (currentFolderId !== id) navigateToFolder(id);
         event.stopPropagation();
       });
+    });
+
+    pane.querySelectorAll('[data-tree-folder]').forEach(button => {
+      button.addEventListener('keydown', event => handleTreeKeydown(event, pane, button));
     });
 
     if (currentFolderId) {
@@ -126,8 +148,62 @@
     }
   }
 
+  function handleTreeKeydown(event, pane, button) {
+    const id = button.dataset.treeFolder;
+    const children = childrenOf(id);
+    const isOpen = expanded.has(id);
+    const parentId = parents.get(id) || null;
+
+    if (event.key === 'Enter') {
+      event.preventDefault();
+      navigateToFolder(id);
+      return;
+    }
+
+    if (event.key === 'ArrowRight') {
+      if (children.length && !isOpen) {
+        event.preventDefault();
+        expanded.add(id);
+        render();
+      } else if (children.length && isOpen) {
+        const first = pane.querySelector(`[data-tree-children="${CSS.escape(id)}"] [data-tree-folder]`);
+        if (first) {
+          event.preventDefault();
+          first.focus();
+        }
+      }
+      return;
+    }
+
+    if (event.key === 'ArrowLeft') {
+      if (children.length && isOpen) {
+        event.preventDefault();
+        expanded.delete(id);
+        render();
+      } else if (parentId) {
+        const parentButton = pane.querySelector(`[data-tree-folder="${CSS.escape(parentId)}"]`);
+        if (parentButton) {
+          event.preventDefault();
+          parentButton.focus();
+        }
+      }
+      return;
+    }
+
+    if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
+      const buttons = visibleFolderButtons(pane);
+      const index = buttons.indexOf(button);
+      const nextIndex = event.key === 'ArrowDown' ? index + 1 : index - 1;
+      if (buttons[nextIndex]) {
+        event.preventDefault();
+        buttons[nextIndex].focus();
+      }
+    }
+  }
+
   function resetToRoot() {
     if (!currentFolderId) return Promise.resolve();
+
     return new Promise(resolve => {
       const back = desktopBack;
       let guard = 0;
@@ -145,7 +221,8 @@
   }
 
   function findDesktopFolder(id) {
-    return [...icons.querySelectorAll('.desktop-icon.is-folder')].find(node => node.dataset.shortcutId === id) || null;
+    return [...icons.querySelectorAll('.desktop-icon.is-folder')]
+      .find(node => node.dataset.shortcutId === id) || null;
   }
 
   function openVisibleFolder(id) {
@@ -158,13 +235,16 @@
   async function navigateToFolder(targetId) {
     if (navigating || targetId === currentFolderId) return;
     navigating = true;
+
     try {
       const chain = targetId ? pathIds(targetId) : [];
       await resetToRoot();
+
       for (const id of chain) {
         if (!openVisibleFolder(id)) break;
         await new Promise(resolve => setTimeout(resolve, 110));
       }
+
       currentFolderId = targetId;
       expanded = new Set(chain);
       render();
@@ -176,11 +256,13 @@
   function syncFromDesktop() {
     const navigation = document.getElementById('desktop-navigation');
     const path = document.getElementById('desktop-path');
+
     if (!navigation || navigation.hidden) currentFolderId = null;
     else {
       const title = (path?.textContent || '').split(' > ').at(-1);
       currentFolderId = folders().find(item => item.title === title)?.id || currentFolderId;
     }
+
     render();
   }
 
@@ -191,6 +273,7 @@
       buildRelations(await response.json());
       createPane();
       syncFromDesktop();
+
       const observer = new MutationObserver(() => window.requestAnimationFrame(syncFromDesktop));
       observer.observe(icons, { childList: true });
     } catch (error) {
