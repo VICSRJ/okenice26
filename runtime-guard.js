@@ -2,34 +2,30 @@
   'use strict';
 
   // GitHub Pages must stay entirely on web-safe resources.
-  // Prevent remote favicon/icon probing and any accidental file:/// references.
+  // Prevent remote favicon/icon probing and accidental file:/// references.
   const localFallbackIcon = 'data/icons/png/folder.png';
 
-  const isBlockedUrl = value => {
+  const isExplicitUnsafeUrl = value => {
     if (!value) return false;
     const raw = String(value).trim();
-    if (/^file:/i.test(raw)) return true;
-    try {
-      const url = new URL(raw, document.baseURI);
-      return url.protocol === 'file:' || !/^(https?:|data:|$)/i.test(url.protocol);
-    } catch {
-      return false;
-    }
+    return /^(?:file:|javascript:|vbscript:|data:text\/html)/i.test(raw);
   };
+
+  const isRemoteImage = value => /^https?:/i.test(String(value || '').trim());
 
   const sanitizeNode = node => {
     if (!(node instanceof Element)) return;
 
-    if (node.matches('a[href]') && isBlockedUrl(node.getAttribute('href'))) {
+    if (node.matches('a[href]') && isExplicitUnsafeUrl(node.getAttribute('href'))) {
       node.removeAttribute('href');
       node.setAttribute('aria-disabled', 'true');
     }
 
     if (node.matches('img[src]')) {
       const src = node.getAttribute('src');
-      // Only local/data images are allowed. External web images are deliberately
-      // suppressed because many sites send restrictive CORP headers for favicons.
-      if (src && (/^https?:/i.test(src) || isBlockedUrl(src))) {
+      // Keep project-local paths and data images. Suppress external favicon loads:
+      // many target sites send CORP headers that browsers reject when embedded.
+      if (src && (isRemoteImage(src) || isExplicitUnsafeUrl(src))) {
         node.setAttribute('src', localFallbackIcon);
         node.removeAttribute('data-favicon-fallbacks');
       }
@@ -38,10 +34,11 @@
 
   const originalSetAttribute = Element.prototype.setAttribute;
   Element.prototype.setAttribute = function(name, value) {
-    if (this instanceof HTMLImageElement && name.toLowerCase() === 'src') {
-      if (/^https?:/i.test(String(value)) || isBlockedUrl(value)) value = localFallbackIcon;
+    const attribute = String(name).toLowerCase();
+    if (this instanceof HTMLImageElement && attribute === 'src') {
+      if (isRemoteImage(value) || isExplicitUnsafeUrl(value)) value = localFallbackIcon;
     }
-    if (this instanceof HTMLAnchorElement && name.toLowerCase() === 'href' && isBlockedUrl(value)) {
+    if (this instanceof HTMLAnchorElement && attribute === 'href' && isExplicitUnsafeUrl(value)) {
       this.removeAttribute('href');
       this.setAttribute('aria-disabled', 'true');
       return;
