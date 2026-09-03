@@ -65,21 +65,23 @@
   }
 
   function faviconCandidates(item) {
-    const saved = safeIconSource(item?.icon);
     if (item?.type === 'folder') return folderIcons;
 
+    const saved = safeIconSource(item?.icon);
     const targetUrl = safeHttpUrl(item?.url);
     if (!targetUrl) return [...new Set([saved].filter(Boolean))];
 
     const target = new URL(targetUrl);
     const remote = [
       `${target.origin}/apple-touch-icon.png`,
+      `${target.origin}/apple-touch-icon-precomposed.png`,
       `${target.origin}/favicon.svg`,
       `${target.origin}/favicon.png`,
       `${target.origin}/favicon.ico`,
       `https://www.google.com/s2/favicons?domain=${encodeURIComponent(target.hostname)}&sz=128`
     ];
-    return [...new Set([saved, ...remote].filter(Boolean))];
+    // Fetch live site art first; stored data-image is only a deterministic fallback.
+    return [...new Set([...remote, saved].filter(Boolean))];
   }
 
   function iconMarkup(item, menuIcon = false) {
@@ -119,7 +121,7 @@
   function shortcutMarkup(item, menuIcon = false) {
     if (!menuIcon) {
       const href = safeHttpUrl(item.url);
-      return `<a class="desktop-icon"${href ? ` href="${escapeHtml(href)}"` : ''} data-shortcut-id="${escapeHtml(item.id)}" aria-label="${escapeHtml(item.title)}">${iconMarkup(item)}<span>${escapeHtml(item.title)}</span></a>`;
+      return `<a class="desktop-icon${item.type === 'folder' ? ' is-folder' : ''}"${href ? ` href="${escapeHtml(href)}"` : ''} data-shortcut-id="${escapeHtml(item.id)}" aria-label="${escapeHtml(item.title)}">${iconMarkup(item)}<span>${escapeHtml(item.title)}</span></a>`;
     }
     if (item.type === 'folder') {
       return `<div class="menu-group" data-menu-folder="${escapeHtml(item.id)}"><button class="menu-shortcut menu-folder-link" type="button" data-menu-folder-toggle="${escapeHtml(item.id)}">${iconMarkup(item, true)}<span>${escapeHtml(item.title)}</span><span class="submenu-arrow">▶</span></button><div class="submenu nested-submenu" data-menu-nested="${escapeHtml(item.id)}" hidden>${renderMenuEntries(item.children || []).join('')}</div></div>`;
@@ -169,7 +171,6 @@
 
   function openFolder(item) {
     if (!item || item.type !== 'folder') return;
-    closeShortcutModal();
     renderDesktop(Array.isArray(item.children) ? item.children : [], item);
   }
 
@@ -226,6 +227,7 @@
   }
 
   function openShortcutModal(item) {
+    if (!item) return;
     const isFolder = item.type === 'folder';
     const childCount = Array.isArray(item.children) ? item.children.length : 0;
     modalName.textContent = item.title;
@@ -236,11 +238,13 @@
     detailTarget.textContent = isFolder ? folderPath(item) : (safeHttpUrl(item.url) || '—');
     detailType.textContent = item.type || 'app';
     detailCategory.textContent = item.category || '—';
-    detailDescription.textContent = item.description || (isFolder ? 'Folder shortcut. This folder can contain links and other folders.' : 'Shortcut to a web application or page.');
+    detailDescription.textContent = item.description || (isFolder ? 'Folder shortcut. Open it with double-click.' : 'Shortcut to a web application or page.');
     modal.hidden = false;
     openButton.disabled = false;
     openButton.textContent = isFolder ? 'Open Folder' : 'Open';
     newWindowButton.disabled = isFolder || !safeHttpUrl(item.url);
+    copyButton.textContent = 'Copy Link';
+    copyButton.disabled = isFolder;
   }
 
   function closeShortcutModal() {
@@ -314,11 +318,9 @@
       closeStartMenu();
       closeShortcutModal();
     }
-    if (event.altKey && event.key === 'ArrowLeft') {
-      if (currentFolderId) {
-        event.preventDefault();
-        goBackFolder();
-      }
+    if (event.altKey && event.key === 'ArrowLeft' && currentFolderId) {
+      event.preventDefault();
+      goBackFolder();
     }
   });
 
@@ -328,13 +330,13 @@
   cancelButton.addEventListener('click', closeShortcutModal);
 
   copyButton.addEventListener('click', async () => {
-    if (!selectedItem) return;
-    const value = selectedItem.type === 'folder' ? folderPath(selectedItem) : safeHttpUrl(selectedItem.url);
+    if (!selectedItem || selectedItem.type === 'folder') return;
+    const value = safeHttpUrl(selectedItem.url);
     if (!value) return;
     try {
       await navigator.clipboard.writeText(value);
       copyButton.textContent = 'Copied';
-      setTimeout(() => { copyButton.textContent = 'Copy'; }, 1000);
+      setTimeout(() => { copyButton.textContent = 'Copy Link'; }, 1000);
     } catch {}
   });
 
