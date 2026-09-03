@@ -27,8 +27,6 @@
   const cancelButton = document.getElementById('shortcut-cancel');
 
   const catalogUrl = 'data/links.json';
-
-  // Real Windows 98 folder art, hosted outside the repository with a browser-safe CDN fallback.
   const folderIcons = [
     'https://cdn.jsdelivr.net/gh/ryokun6/ryos@main/public/resources/windows-icon-catalogs/win98/folders/directory-closed.png',
     'https://raw.githubusercontent.com/ryokun6/ryos/main/public/resources/windows-icon-catalogs/win98/folders/directory-closed.png'
@@ -38,6 +36,7 @@
   let catalogItems = new Map();
   let selectedItem = null;
   let clickTimer = null;
+  let clickTarget = null;
   let currentFolderId = null;
   let rootDesktopIds = [];
   const parentFolders = new Map();
@@ -58,7 +57,7 @@
     if (/^data:image\//i.test(raw)) return raw;
     try {
       const url = new URL(raw, document.baseURI);
-      if (/^https?:$/i.test(url.protocol)) return url.href;
+      if (/^(https?:)$/i.test(url.protocol)) return url.href;
       if (url.protocol === 'file:') return '';
       return url.pathname + url.search + url.hash;
     } catch { return ''; }
@@ -66,11 +65,9 @@
 
   function faviconCandidates(item) {
     if (item?.type === 'folder') return folderIcons;
-
     const saved = safeIconSource(item?.icon);
     const targetUrl = safeHttpUrl(item?.url);
     if (!targetUrl) return [...new Set([saved].filter(Boolean))];
-
     const target = new URL(targetUrl);
     const remote = [
       `${target.origin}/apple-touch-icon.png`,
@@ -80,8 +77,6 @@
       `${target.origin}/favicon.ico`,
       `https://www.google.com/s2/favicons?domain=${encodeURIComponent(target.hostname)}&sz=128`
     ];
-
-    // Always try live favicon art first. Stored data:image remains the deterministic final fallback.
     return [...new Set([...remote, saved].filter(Boolean))];
   }
 
@@ -89,7 +84,6 @@
     const sizeClass = menuIcon ? 'menu-icon shortcut-menu-icon' : 'shortcut-icon';
     const candidates = faviconCandidates(item);
     if (!candidates.length) return '<span class="icon-art icon-folder" aria-hidden="true"></span>';
-
     return `<img class="${sizeClass} favicon-image${item.type === 'folder' ? ' folder-icon' : ''}" src="${escapeHtml(candidates[0])}" data-favicon-fallbacks="${escapeHtml(candidates.slice(1).join('|'))}" alt="" loading="eager" decoding="async" referrerpolicy="no-referrer">`;
   }
 
@@ -121,8 +115,6 @@
 
   function shortcutMarkup(item, menuIcon = false) {
     if (!menuIcon) {
-      // Folders use a real button so the single-click properties modal works consistently,
-      // while double-click keeps the Windows 98 open-folder behavior.
       if (item.type === 'folder') {
         return `<button class="desktop-icon is-folder" type="button" data-shortcut-id="${escapeHtml(item.id)}" aria-label="${escapeHtml(item.title)}">${iconMarkup(item)}<span>${escapeHtml(item.title)}</span></button>`;
       }
@@ -245,7 +237,7 @@
     detailTarget.textContent = isFolder ? folderPath(item) : (safeHttpUrl(item.url) || '—');
     detailType.textContent = item.type || 'app';
     detailCategory.textContent = item.category || '—';
-    detailDescription.textContent = item.description || (isFolder ? 'Folder shortcut. Open it with double-click.' : 'Shortcut to a web application or page.');
+    detailDescription.textContent = item.description || (isFolder ? 'Folder shortcut. Double-click opens the folder.' : 'Shortcut to a web application or page.');
     modal.hidden = false;
     openButton.disabled = false;
     openButton.textContent = isFolder ? 'Open Folder' : 'Open';
@@ -287,10 +279,20 @@
       event.preventDefault();
       const item = catalogItems.get(desktopLink.dataset.shortcutId);
       if (!item) return;
+
+      if (clickTimer && clickTarget === desktopLink) {
+        clearTimeout(clickTimer);
+        clickTimer = null;
+        clickTarget = null;
+        return;
+      }
+
       if (clickTimer) clearTimeout(clickTimer);
+      clickTarget = desktopLink;
       clickTimer = setTimeout(() => {
         selectDesktopShortcut(desktopLink);
         clickTimer = null;
+        clickTarget = null;
       }, DOUBLE_CLICK_DELAY);
       return;
     }
@@ -314,6 +316,7 @@
     event.preventDefault();
     if (clickTimer) clearTimeout(clickTimer);
     clickTimer = null;
+    clickTarget = null;
     const item = catalogItems.get(link.dataset.shortcutId);
     openTarget(item);
   });
