@@ -21,7 +21,6 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 22
-          cache: npm
 
       - name: Validate JSON, catalog relationships and remote assets
         run: node tools/validate.mjs
