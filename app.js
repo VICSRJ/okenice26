@@ -80,7 +80,8 @@
       `${target.origin}/favicon.ico`,
       `https://www.google.com/s2/favicons?domain=${encodeURIComponent(target.hostname)}&sz=128`
     ];
-    // Fetch live site art first; stored data-image is only a deterministic fallback.
+
+    // Always try live favicon art first. Stored data:image remains the deterministic final fallback.
     return [...new Set([...remote, saved].filter(Boolean))];
   }
 
@@ -120,8 +121,13 @@
 
   function shortcutMarkup(item, menuIcon = false) {
     if (!menuIcon) {
+      // Folders use a real button so the single-click properties modal works consistently,
+      // while double-click keeps the Windows 98 open-folder behavior.
+      if (item.type === 'folder') {
+        return `<button class="desktop-icon is-folder" type="button" data-shortcut-id="${escapeHtml(item.id)}" aria-label="${escapeHtml(item.title)}">${iconMarkup(item)}<span>${escapeHtml(item.title)}</span></button>`;
+      }
       const href = safeHttpUrl(item.url);
-      return `<a class="desktop-icon${item.type === 'folder' ? ' is-folder' : ''}"${href ? ` href="${escapeHtml(href)}"` : ''} data-shortcut-id="${escapeHtml(item.id)}" aria-label="${escapeHtml(item.title)}">${iconMarkup(item)}<span>${escapeHtml(item.title)}</span></a>`;
+      return `<a class="desktop-icon"${href ? ` href="${escapeHtml(href)}"` : ''} data-shortcut-id="${escapeHtml(item.id)}" aria-label="${escapeHtml(item.title)}">${iconMarkup(item)}<span>${escapeHtml(item.title)}</span></a>`;
     }
     if (item.type === 'folder') {
       return `<div class="menu-group" data-menu-folder="${escapeHtml(item.id)}"><button class="menu-shortcut menu-folder-link" type="button" data-menu-folder-toggle="${escapeHtml(item.id)}">${iconMarkup(item, true)}<span>${escapeHtml(item.title)}</span><span class="submenu-arrow">▶</span></button><div class="submenu nested-submenu" data-menu-nested="${escapeHtml(item.id)}" hidden>${renderMenuEntries(item.children || []).join('')}</div></div>`;
@@ -171,6 +177,7 @@
 
   function openFolder(item) {
     if (!item || item.type !== 'folder') return;
+    closeShortcutModal();
     renderDesktop(Array.isArray(item.children) ? item.children : [], item);
   }
 
