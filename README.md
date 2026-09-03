@@ -4,7 +4,7 @@ Lightweight browser desktop inspired by Windows 98. The project turns a large we
 
 ## What it is
 
-Macroloft Luxffery 26 is a **web link launcher / bookmark desktop**, not a simulated operating system. The UI deliberately keeps the classic Windows 98 visual language: teal desktop, gray bevels, navy title bars, pixel-oriented 32px icons and cascading menus.
+Macroloft Luxffery 26 is a **web link launcher / bookmark desktop**, not a simulated operating system. The UI deliberately keeps the classic Windows 98 visual language: teal desktop, gray bevels, navy title bars, pixel-oriented icons and cascading menus.
 
 The content model is data-driven. Desktop shortcuts, Start-menu entries, Quick Launch entries and folders are resolved from the same catalog in `data/links.json`.
 
@@ -18,7 +18,8 @@ The content model is data-driven. Desktop shortcuts, Start-menu entries, Quick L
 - Desktop single-click selection with shortcut information dialog
 - Desktop double-click direct open
 - Quick Launch opens web targets in a new tab
-- Local PNG icon system with safe remote favicon fallback
+- Remote retro folder icon from Wikimedia Commons
+- Embedded/data icons remain usable without a bundled PNG asset tree
 - URL protection: only `http:` and `https:` targets are allowed
 - GitHub Pages compatible relative asset paths
 - Responsive layout for desktop and mobile widths
@@ -82,14 +83,13 @@ This keeps the UI independent from the bookmark source. The bookmark export can 
 okenice26/
 ├── index.html                 # desktop shell + Start menu + shortcut dialog
 ├── app.js                     # catalog loading, rendering and interaction logic
+├── runtime-guard.js           # URL/image safety and remote folder-icon policy
 ├── styles.css                 # base Windows 98 visual system
 ├── top-taskbar.css            # top-docked taskbar layout
 ├── shortcut-template.css      # shortcut, menu and folder styling
 ├── menu.css                   # cascading menu behavior/style
 ├── data/
-│   ├── links.json             # catalog and hierarchy
-│   └── icons/
-│       └── png/               # local 32×32 application icons
+│   └── links.json             # catalog and hierarchy
 ├── docs/
 │   └── SITE-MAP.md            # structure map and navigation model
 └── README.md
@@ -97,21 +97,17 @@ okenice26/
 
 ## Icon system
 
-The preferred icon source is the project's local PNG library:
+The project no longer bundles the large `data/icons/png/` library. This keeps the repository smaller and removes the previous dependency on a local PNG tree.
+
+The standard folder visual is a classic Windows 95/98-era folder PNG hosted remotely by Wikimedia Commons:
 
 ```text
-data/icons/png/*.png
+https://upload.wikimedia.org/wikipedia/commons/0/0b/Windows_95_FOLDER.png
 ```
 
-Known application assets include icons for ChatGPT, DeepSeek, Gemini, Claude, Figma, YouTube, Notion, Spotify, GitHub, Discord, Telegram, WhatsApp, Gmail, Steam, GOG, DaVinci Resolve, Canva, Next.js, React, Vue, Nuxt, Vite, Vercel, Docker, Kubernetes, Tailwind CSS and Colab.
+Source reference: Wikimedia Commons, **Windows 95 FOLDER.png**. citeturn970415image2
 
-Folders use the local:
-
-```text
-data/icons/png/folder.png
-```
-
-The renderer tries the local asset first and only then considers a remote favicon. This makes the visual result predictable on GitHub Pages and avoids references to local computer paths such as `file:///`.
+The runtime guard also prevents automatic probing of third-party favicons. This avoids repeated CORP/ORB browser errors and keeps the desktop deterministic. Where the bookmark catalog contains an embedded `data:image/...` icon, that icon can still be used.
 
 ## GitHub Pages / security
 
@@ -284,7 +280,7 @@ desktop + Start + Quick Launch renderer
 GitHub Pages
 ```
 
-That separates **content**, **assets**, **validation** and **presentation**, making the project much easier to extend without repeatedly editing the UI code.
+That separates **content**, **asset policy**, **validation** and **presentation**, making the project much easier to extend without repeatedly editing the UI code.
 
 ## Development
 
@@ -300,7 +296,7 @@ Preserve the Windows 98 visual grammar while modernizing only the implementation
 classic appearance
 + data-driven navigation
 + safe web URLs
-+ reusable local PNG assets
++ remote retro folder icon
 + responsive layout
 = maintainable retro web desktop
 ```
