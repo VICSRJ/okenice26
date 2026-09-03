@@ -123,14 +123,14 @@ if (/\b(?:src|href)=["']file:/i.test(html)) fail('index.html: file: URL remains 
 
 const requiredFiles = [
   'app.js', 'runtime-guard.js', 'hierarchy-tree.js', 'enhancements.css', 'desktop-metadata.js', 'desktop-metadata.css',
-  'styles.css', 'top-taskbar.css', 'shortcut-template.css', 'menu.css', 'data/links.json'
+  'styles.css', 'top-taskbar.css', 'shortcut-template.css', 'menu.css', 'data/links.json', 'tools/build-static.mjs'
 ];
 for (const file of requiredFiles) if (!exists(file)) fail(`missing required file: ${file}`);
 
 const tree = [];
 function collectFiles(dir = '.') {
   for (const entry of fs.readdirSync(path.join(root, dir), { withFileTypes: true })) {
-    if (entry.name === '.git' || entry.name === 'node_modules') continue;
+    if (entry.name === '.git' || entry.name === 'node_modules' || entry.name === 'dist') continue;
     const relative = path.join(dir, entry.name);
     if (entry.isDirectory()) collectFiles(relative);
     else tree.push(relative.replaceAll(path.sep, '/'));
@@ -152,13 +152,17 @@ if (hierarchy && !/ArrowRight/.test(hierarchy) || hierarchy && !/ArrowLeft/.test
 const enhancements = exists('enhancements.css') ? fs.readFileSync(path.join(root, 'enhancements.css'), 'utf8') : '';
 if (enhancements && !/prefers-reduced-motion/.test(enhancements)) fail('enhancements.css: reduced-motion fallback missing');
 if (enhancements && !/\.hierarchy-tree/.test(enhancements)) fail('enhancements.css: hierarchy styles missing');
-if (enhancements && !/startMenuIn/.test(enhancements)) fail('enhancements.css: Start menu animation missing');
+if (enhancements && !/win98-menu-in/.test(enhancements)) fail('enhancements.css: Start menu animation missing');
 if (enhancements && !/shortcut-modal/.test(enhancements)) fail('enhancements.css: modal polish missing');
 
 const metadata = exists('desktop-metadata.js') ? fs.readFileSync(path.join(root, 'desktop-metadata.js'), 'utf8') : '';
 if (metadata && !/okenice:desktop-rendered/.test(metadata)) fail('desktop-metadata.js: render synchronization hook missing');
 if (metadata && !/desktop-machine-url/.test(metadata)) fail('desktop-metadata.js: machine URL rendering missing');
 if (metadata && !/desktop-tag/.test(metadata)) fail('desktop-metadata.js: tag rendering missing');
+
+const guard = exists('runtime-guard.js') ? fs.readFileSync(path.join(root, 'runtime-guard.js'), 'utf8') : '';
+if (guard && /Element\.prototype|HTMLImageElement\.prototype/.test(guard)) fail('runtime-guard.js: browser prototype monkey-patching is not allowed');
+if (guard && !/file:/i.test(guard)) fail('runtime-guard.js: file URL guard missing');
 
 const folderCdn = 'https://cdn.jsdelivr.net/gh/ryokun6/ryos@main/public/resources/windows-icon-catalogs/win98/folders/directory-closed.png';
 const folderRaw = 'https://raw.githubusercontent.com/ryokun6/ryos/main/public/resources/windows-icon-catalogs/win98/folders/directory-closed.png';
@@ -177,4 +181,4 @@ if (errors.length) {
   process.exit(1);
 }
 
-console.log(`Validation passed: ${jsonFiles.length} JSON file(s), ${tree.length} repository file(s), catalog ownership, hierarchy, keyboard navigation, icon mirrors and UI contracts checked.`);
+console.log(`Validation passed: ${jsonFiles.length} JSON file(s), ${tree.length} repository file(s), catalog hierarchy, keyboard navigation, static build and icon mirrors checked.`);
