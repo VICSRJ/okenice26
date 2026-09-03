@@ -55,7 +55,7 @@
     if (pane) return pane;
     pane = document.createElement('aside');
     pane.id = 'hierarchy-tree';
-    pane.className = 'hierarchy-tree';
+    pane.className = 'hierarchy-tree is-visible';
     pane.setAttribute('aria-label', 'Folder hierarchy');
     pane.innerHTML = `
       <div class="hierarchy-titlebar">
@@ -63,7 +63,7 @@
         <strong>Hierarchy</strong>
       </div>
       <div class="hierarchy-body">
-        <button class="tree-root" type="button" data-tree-root="1">
+        <button class="tree-root" type="button" data-tree-root="1" aria-current="page">
           <span class="tree-expander tree-expander-empty" aria-hidden="true"></span>
           <span class="tree-small-icon tree-desktop-icon" aria-hidden="true"></span>
           <span class="tree-label">Desktop</span>
@@ -95,8 +95,12 @@
     const pane = createPane();
     const body = pane.querySelector('.tree-root-children');
     body.innerHTML = roots.map(item => folderButton(item, 0)).join('');
-    pane.classList.toggle('is-visible', Boolean(currentFolderId));
-    desktop.classList.toggle('has-hierarchy', Boolean(currentFolderId));
+    pane.classList.add('is-visible');
+
+    const root = pane.querySelector('[data-tree-root]');
+    const atRoot = !currentFolderId;
+    root?.classList.toggle('is-active', atRoot);
+    root?.setAttribute('aria-current', atRoot ? 'page' : 'false');
 
     pane.querySelectorAll('[data-tree-folder]').forEach(button => {
       button.addEventListener('click', event => {
