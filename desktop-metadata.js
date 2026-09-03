@@ -12,14 +12,14 @@
     '&':'&amp;', '<':'&lt;', '>':'&gt;', '\"':'&quot;'
   }[char]));
 
-  function machineUrl(value) {
+  function machineUrl(input) {
     try {
-      const url = new URL(String(value || ''));
+      const url = new URL(String(input || ''));
       if (!/^https?:$/i.test(url.protocol)) return '';
       const host = url.hostname.replace(/^www\./i, '');
       const path = `${url.pathname || '/'}${url.search || ''}${url.hash || ''}`;
-      const value = `${host}${path === '/' ? '' : path}`;
-      return value.length > 54 ? `${value.slice(0, 51)}…` : value;
+      const compact = `${host}${path === '/' ? '' : path}`;
+      return compact.length > 54 ? `${compact.slice(0, 51)}…` : compact;
     } catch { return ''; }
   }
 
