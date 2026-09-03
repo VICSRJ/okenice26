@@ -1,130 +1,60 @@
 (() => {
   'use strict';
 
-  // Remote folder art is pinned to known Windows 98 assets; ordinary web favicons are allowed for app shortcuts.
-  const REMOTE_FOLDER_ICONS = new Set([
-    'https://cdn.jsdelivr.net/gh/ryokun6/ryos@main/public/resources/windows-icon-catalogs/win98/folders/directory-closed.png',
-    'https://raw.githubusercontent.com/ryokun6/ryos/main/public/resources/windows-icon-catalogs/win98/folders/directory-closed.png'
-  ]);
-
-  const isRemoteFolderIcon = value => {
-    try {
-      const url = new URL(String(value || ''), document.baseURI);
-      return REMOTE_FOLDER_ICONS.has(url.href);
-    } catch {
-      return false;
-    }
-  };
-
+  // Browser-side safety layer for this static site.
+  // Navigation accepts only http(s); image loading accepts http(s), data:image and same-origin assets.
   const isFileUrl = value => /^\s*file:/i.test(String(value || ''));
   const isHttpUrl = value => /^\s*https?:/i.test(String(value || ''));
   const isDataImage = value => /^\s*data:image\//i.test(String(value || ''));
 
-  const fallbackCandidates = image => {
-    const raw = image?.getAttribute?.('data-favicon-fallbacks') || '';
-    return raw.split('|').filter(Boolean);
-  };
-
-  const normalizeImageUrl = (image, value) => {
+  const safeImageUrl = value => {
     const raw = String(value || '').trim();
     if (!raw || isFileUrl(raw)) return '';
     if (isDataImage(raw)) return raw;
-    if (/data\/icons\/png\/folder\.png(?:$|[?#])/i.test(raw) || /(?:^|\/)folder\.png(?:$|[?#])/i.test(raw)) {
-      return [...REMOTE_FOLDER_ICONS][0];
-    }
-    if (isRemoteFolderIcon(raw)) return raw;
-
-    // Web favicon images are intentionally allowed: they are passive <img> resources, not executable content.
-    if (isHttpUrl(raw)) return raw;
 
     try {
       const url = new URL(raw, document.baseURI);
-      if (url.protocol === 'file:') return '';
-      if (url.protocol === 'data:') return isDataImage(url.href) ? url.href : '';
-      if (isRemoteFolderIcon(url.href)) return url.href;
+      if (isFileUrl(url.href)) return '';
       if (url.protocol === 'http:' || url.protocol === 'https:') return url.href;
-      return url.pathname + url.search + url.hash;
-    } catch {
-      return '';
-    }
+      if (url.protocol === 'data:') return isDataImage(url.href) ? url.href : '';
+      if (url.origin === window.location.origin) return `${url.pathname}${url.search}${url.hash}`;
+    } catch {}
+
+    return '';
   };
 
-  const sanitizeElement = element => {
-    if (!(element instanceof Element)) return;
-
-    if (element.matches('a[href]')) {
-      const href = element.getAttribute('href');
-      if (isFileUrl(href)) {
-        element.removeAttribute('href');
-        element.setAttribute('aria-disabled', 'true');
-      }
-    }
-
-    if (element instanceof HTMLImageElement && element.hasAttribute('src')) {
-      const current = element.getAttribute('src');
-      const safe = normalizeImageUrl(element, current);
-      if (safe !== current) {
-        if (safe) originalSetAttribute.call(element, 'src', safe);
-        else element.removeAttribute('src');
-      }
-    }
-  };
-
-  const originalSetAttribute = Element.prototype.setAttribute;
-  const originalSrc = Object.getOwnPropertyDescriptor(HTMLImageElement.prototype, 'src');
-
-  Element.prototype.setAttribute = function(name, value) {
-    const key = String(name).toLowerCase();
-    if (this instanceof HTMLAnchorElement && key === 'href' && isFileUrl(value)) {
-      this.removeAttribute('href');
-      originalSetAttribute.call(this, 'aria-disabled', 'true');
-      return;
-    }
-    if (this instanceof HTMLImageElement && key === 'src') {
-      const safe = normalizeImageUrl(this, value);
-      if (!safe) {
-        this.removeAttribute('src');
-        return;
-      }
-      return originalSetAttribute.call(this, 'src', safe);
-    }
-    return originalSetAttribute.call(this, name, value);
-  };
-
-  if (originalSrc?.get && originalSrc?.set) {
-    Object.defineProperty(HTMLImageElement.prototype, 'src', {
-      configurable: originalSrc.configurable,
-      enumerable: originalSrc.enumerable,
-      get: originalSrc.get,
-      set(value) {
-        const safe = normalizeImageUrl(this, value);
-        if (!safe) {
-          this.removeAttribute('src');
-          return;
+  const sanitize = root => {
+    const nodes = root?.querySelectorAll ? root.querySelectorAll('a[href], img[src]') : [];
+    nodes.forEach(node => {
+      if (node instanceof HTMLAnchorElement) {
+        const href = node.getAttribute('href');
+        if (isFileUrl(href)) {
+          node.removeAttribute('href');
+          node.setAttribute('aria-disabled', 'true');
         }
-        originalSrc.set.call(this, safe);
+      }
+      if (node instanceof HTMLImageElement) {
+        const src = node.getAttribute('src');
+        const safe = safeImageUrl(src);
+        if (safe && safe !== src) node.setAttribute('src', safe);
+        else if (!safe && src) node.removeAttribute('src');
       }
     });
-  }
+  };
 
   const observer = new MutationObserver(records => {
     records.forEach(record => {
       record.addedNodes.forEach(node => {
-        if (node.nodeType !== Node.ELEMENT_NODE) return;
-        sanitizeElement(node);
-        node.querySelectorAll?.('a[href],img[src]').forEach(sanitizeElement);
+        if (node.nodeType === Node.ELEMENT_NODE) sanitize(node);
       });
     });
   });
 
   const boot = () => {
-    document.querySelectorAll('a[href],img[src]').forEach(sanitizeElement);
+    sanitize(document);
     observer.observe(document.documentElement, { childList: true, subtree: true });
   };
 
-  if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', boot, { once: true });
-  } else {
-    boot();
-  }
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', boot, { once: true });
+  else boot();
 })();
