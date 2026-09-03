@@ -62,10 +62,8 @@ if (catalog) {
         }
         const child = itemById.get(childId);
         if (child?.parent && child.parent !== item.id) fail(`data/links.json: ${childId}.parent=${child.parent} conflicts with ${item.id}.children[]`);
-        if (child?.type === 'app' || child?.type === 'folder') {
-          if (childOwners.has(childId) && childOwners.get(childId) !== item.id) fail(`data/links.json: ${childId} is owned by multiple folders`);
-          childOwners.set(childId, item.id);
-        }
+        if (childOwners.has(childId) && childOwners.get(childId) !== item.id) fail(`data/links.json: ${childId} is owned by multiple folders`);
+        childOwners.set(childId, item.id);
       }
     }
     if (item.parent && !ids.has(item.parent)) fail(`data/links.json: ${item.id} references missing parent ${item.parent}`);
@@ -83,23 +81,21 @@ if (catalog) {
   }
 
   for (const item of items) {
-    if (item.type === 'app' && item.parent && !childOwners.has(item.id)) fail(`data/links.json: app ${item.id} declares parent ${item.parent} but is absent from that folder's children[]`);
-    if (item.type === 'folder' && item.parent && !childOwners.has(item.id)) fail(`data/links.json: folder ${item.id} declares parent ${item.parent} but is absent from that folder's children[]`);
+    if (item.type === 'app' && item.parent && childOwners.get(item.id) !== item.parent) fail(`data/links.json: app ${item.id} parent/children relationship is incomplete`);
+    if (item.type === 'folder' && item.parent && childOwners.get(item.id) !== item.parent) fail(`data/links.json: folder ${item.id} parent/children relationship is incomplete`);
   }
 
-  if (Array.isArray(catalog.quickLaunch)) {
-    for (const id of catalog.quickLaunch) {
-      if (!ids.has(id)) fail(`data/links.json: quickLaunch references missing item ${id}`);
-      else if (itemById.get(id)?.type !== 'app') fail(`data/links.json: quickLaunch may contain app links only; ${id} is ${itemById.get(id)?.type}`);
-    }
-  } else fail('data/links.json: quickLaunch must be an array');
+  if (!Array.isArray(catalog.quickLaunch)) fail('data/links.json: quickLaunch must be an array');
+  else for (const id of catalog.quickLaunch) {
+    if (!ids.has(id)) fail(`data/links.json: quickLaunch references missing item ${id}`);
+    else if (itemById.get(id)?.type !== 'app') fail(`data/links.json: quickLaunch may contain app links only; ${id} is ${itemById.get(id)?.type}`);
+  }
 
   for (const [menuId, menuItems] of Object.entries(catalog.menus || {})) {
     if (!Array.isArray(menuItems)) fail(`data/links.json: menu ${menuId} must be an array`);
     for (const id of menuItems || []) if (!ids.has(id)) fail(`data/links.json: menu ${menuId} references missing item ${id}`);
   }
 
-  // Detect parent cycles.
   for (const item of items) {
     let cursor = item.id;
     const seen = new Set();
@@ -151,6 +147,7 @@ if (hierarchy && !/data\/links\.json/.test(hierarchy)) fail('hierarchy-tree.js: 
 if (hierarchy && !/hierarchy-tree/.test(hierarchy)) fail('hierarchy-tree.js: tree root missing');
 if (hierarchy && !/is-current/.test(hierarchy)) fail('hierarchy-tree.js: current hierarchy state missing');
 if (hierarchy && !/navigateToFolder/.test(hierarchy)) fail('hierarchy-tree.js: tree navigation missing');
+if (hierarchy && !/ArrowRight/.test(hierarchy) || hierarchy && !/ArrowLeft/.test(hierarchy) || hierarchy && !/ArrowDown/.test(hierarchy) || hierarchy && !/ArrowUp/.test(hierarchy)) fail('hierarchy-tree.js: keyboard navigation missing');
 
 const enhancements = exists('enhancements.css') ? fs.readFileSync(path.join(root, 'enhancements.css'), 'utf8') : '';
 if (enhancements && !/prefers-reduced-motion/.test(enhancements)) fail('enhancements.css: reduced-motion fallback missing');
@@ -180,4 +177,4 @@ if (errors.length) {
   process.exit(1);
 }
 
-console.log(`Validation passed: ${jsonFiles.length} JSON file(s), ${tree.length} repository file(s), catalog ownership, hierarchy, icon mirrors and UI contracts checked.`);
+console.log(`Validation passed: ${jsonFiles.length} JSON file(s), ${tree.length} repository file(s), catalog ownership, hierarchy, keyboard navigation, icon mirrors and UI contracts checked.`);
