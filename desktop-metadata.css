@@ -1,0 +1,74 @@
+/* Compact metadata for app shortcuts inside folders. */
+.desktop .desktop-icons{column-gap:12px;row-gap:10px}
+.desktop .desktop-icon.is-app{
+  width:172px;
+  min-height:112px;
+  padding:4px 5px 5px;
+  gap:3px;
+  justify-content:flex-start;
+  overflow:hidden;
+}
+.desktop .desktop-icon.is-app>.shortcut-icon,
+.desktop .desktop-icon.is-app>.favicon-image{
+  width:32px!important;
+  height:32px!important;
+  min-width:32px;
+  min-height:32px;
+  flex:0 0 32px;
+  margin-bottom:1px;
+}
+.desktop-link-meta{
+  width:100%;
+  min-width:0;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  gap:3px;
+  line-height:10px;
+}
+.desktop-machine-url{
+  display:block;
+  width:100%;
+  overflow:hidden;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+  color:#d7ffff;
+  font:9px/10px "Courier New",monospace;
+  letter-spacing:-.15px;
+  text-shadow:1px 1px #000;
+}
+.desktop-icon.selected .desktop-machine-url{color:#fff}
+.desktop-tags{
+  display:flex;
+  max-width:100%;
+  justify-content:center;
+  flex-wrap:wrap;
+  gap:2px;
+  overflow:hidden;
+}
+.desktop-tag{
+  display:inline-block;
+  max-width:72px;
+  overflow:hidden;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+  padding:1px 4px;
+  border:1px solid #404040;
+  background:#dfdfdf;
+  color:#000;
+  box-shadow:inset 1px 1px #fff,inset -1px -1px #808080;
+  font:8px/9px "MS Sans Serif",Tahoma,Arial,sans-serif;
+  text-shadow:none;
+}
+.desktop-icon:hover .desktop-tag,
+.desktop-icon.selected .desktop-tag{background:#c0c0c0;color:#000}
+.desktop .desktop-icon.is-folder{width:86px;min-height:73px}
+
+@media(max-width:700px){
+  .desktop .desktop-icons{left:7px;right:7px;column-gap:8px}
+  .desktop .desktop-icon.is-app{width:158px;min-height:108px}
+}
+
+@media(prefers-reduced-motion:reduce){
+  .desktop-machine-url,.desktop-tag{transition:none!important}
+}
