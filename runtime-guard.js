@@ -1,12 +1,16 @@
 (() => {
   'use strict';
 
-  // Only the explicit remote Windows 98 folder asset is allowed as a remote image.
-  const REMOTE_FOLDER_ICON = 'https://raw.githubusercontent.com/ryokun6/ryos/main/public/resources/windows-icon-catalogs/win98/folders/directory-closed.png';
+  // Only the two known mirrors of the Windows 98 folder asset are allowed remotely.
+  const REMOTE_FOLDER_ICONS = new Set([
+    'https://cdn.jsdelivr.net/gh/ryokun6/ryos@main/public/resources/windows-icon-catalogs/win98/folders/directory-closed.png',
+    'https://raw.githubusercontent.com/ryokun6/ryos/main/public/resources/windows-icon-catalogs/win98/folders/directory-closed.png'
+  ]);
+
   const isRemoteFolderIcon = value => {
     try {
       const url = new URL(String(value || ''), document.baseURI);
-      return url.href === REMOTE_FOLDER_ICON;
+      return REMOTE_FOLDER_ICONS.has(url.href);
     } catch {
       return false;
     }
@@ -27,15 +31,15 @@
     if (isFileUrl(raw)) return '';
     if (isDataImage(raw)) return raw;
     if (/data\/icons\/png\/folder\.png(?:$|[?#])/i.test(raw) || /(?:^|\/)folder\.png(?:$|[?#])/i.test(raw)) {
-      return REMOTE_FOLDER_ICON;
+      return [...REMOTE_FOLDER_ICONS][0];
     }
-    if (isRemoteFolderIcon(raw)) return REMOTE_FOLDER_ICON;
+    if (isRemoteFolderIcon(raw)) return raw;
     if (isHttpUrl(raw)) return dataImageFallback(image);
     try {
       const url = new URL(raw, document.baseURI);
       if (url.protocol === 'file:') return '';
       if (url.protocol === 'data:') return isDataImage(url.href) ? url.href : '';
-      if (url.href === REMOTE_FOLDER_ICON) return REMOTE_FOLDER_ICON;
+      if (isRemoteFolderIcon(url.href)) return url.href;
       if (url.protocol === 'http:' || url.protocol === 'https:') return dataImageFallback(image);
       return url.pathname + url.search + url.hash;
     } catch {
