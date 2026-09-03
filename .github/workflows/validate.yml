@@ -1,0 +1,39 @@
+name: Validate
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Validate JSON, catalog relationships and remote assets
+        run: node tools/validate.mjs
+
+      - name: Validate JavaScript syntax
+        run: |
+          for file in *.js; do
+            node --check "$file"
+          done
+
+      - name: Install HTML validator
+        run: npm install --no-save --no-package-lock html-validate
+
+      - name: Validate HTML
+        run: npx html-validate index.html
