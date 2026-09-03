@@ -1,7 +1,7 @@
-# Okenice26 — Windows 98 link template
+# Macroloft Luxffery 26 — Windows 98 link template
 
-A lightweight Windows 98-style desktop template for web application shortcuts and folders.
+A lightweight Windows 98-style desktop template for web application shortcuts and nested folders.
 
-Each desktop and Start-menu entry is a normal web link. Reuse the exact same SVG asset anywhere an item appears.
+Desktop and Start-menu entries are driven by one shared catalog. Folders can contain applications, links, and other folders.
 
-Example icon path: `icons/google.icon.svg`.
+Icons can be stored locally and reused wherever an item appears.
