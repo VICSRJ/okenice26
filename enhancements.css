@@ -1,131 +1,223 @@
-/* Win98 polish: clear hierarchy, restrained shadows and state-change motion. */
-
-.start-menu{
-  position:fixed!important;
-  left:3px!important;
-  top:27px!important;
-  bottom:auto!important;
-  transform-origin:12px 0;
-  box-shadow:1px 1px #fff,2px 2px #404040,3px 3px 0 rgba(0,0,0,.35)!important;
-  animation:startMenuIn .10s steps(2,end);
+/* Okenice26 — static Windows 98 visual polish.
+ * Loaded after the base styles. No fake app windows, no runtime simulation.
+ */
+:root {
+  --win98-bg: #c0c0c0;
+  --win98-white: #ffffff;
+  --win98-light: #dfdfdf;
+  --win98-gray: #808080;
+  --win98-dark: #404040;
+  --win98-black: #000000;
+  --win98-blue: #000080;
+  --win98-teal: #008080;
+  --win98-outset: inset 1px 1px #fff, inset 2px 2px #dfdfdf, inset -1px -1px #000, inset -2px -2px #808080;
+  --win98-inset: inset -1px -1px #fff, inset -2px -2px #dfdfdf, inset 1px 1px #000, inset 2px 2px #808080;
 }
 
-.start-item,.menu-shortcut,.tree-row,.desktop-icon,.quick-button,.start-button{
-  transition:background-color .08s steps(2,end),color .08s steps(2,end),transform .08s ease,box-shadow .08s ease;
+html, body { font-family: "MS Sans Serif", Tahoma, Arial, sans-serif; }
+button, input, select, textarea { font: inherit; border-radius: 0; }
+
+button,
+.start-button,
+.quick-button,
+.start-item,
+.tree-row,
+.context-menu button {
+  border-radius: 0;
+  -webkit-font-smoothing: none;
 }
 
-.start-item:hover,.menu-shortcut:hover,.tree-row:hover{transform:translateX(1px)}
-.start-item:active,.menu-shortcut:active,.tree-row:active{transform:translate(1px,1px)}
-
-.desktop-icon{
-  transition:background-color .08s steps(2,end),color .08s steps(2,end),transform .12s ease,filter .12s ease;
-}
-.desktop-icon:hover{filter:drop-shadow(1px 1px 0 rgba(0,0,0,.5))}
-.desktop-icon.selected{box-shadow:inset 1px 1px rgba(255,255,255,.15),inset -1px -1px rgba(0,0,0,.25)}
-
-.shortcut-modal[hidden]{display:none}
-.shortcut-modal:not([hidden]){animation:modalFadeIn .12s steps(2,end)}
-.shortcut-dialog{box-shadow:2px 2px #000,3px 3px 0 rgba(0,0,0,.28),inset 1px 1px #fff,inset -1px -1px #404040}
-
-/* Permanent left Explorer-style hierarchy. */
-.hierarchy-tree{
-  position:absolute;
-  left:4px;
-  top:7px;
-  bottom:7px;
-  width:236px;
-  background:#c0c0c0;
-  border:1px solid #000;
-  box-shadow:1px 1px #fff,2px 2px #404040,3px 3px 0 rgba(0,0,0,.28),inset 1px 1px #dfdfdf,inset -1px -1px #808080;
-  display:flex;
-  flex-direction:column;
-  z-index:10;
-  opacity:1;
-  transform:none;
-  pointer-events:auto;
-}
-.hierarchy-titlebar{
-  height:21px;
-  min-height:21px;
-  padding:2px 4px;
-  display:flex;
-  align-items:center;
-  gap:5px;
-  color:#fff;
-  background:#000080;
-  box-shadow:inset 1px 1px rgba(255,255,255,.18),inset -1px -1px rgba(0,0,0,.25);
-  font:700 11px "MS Sans Serif",Tahoma,Arial,sans-serif;
-}
-.hierarchy-title-icon{width:12px;height:12px;position:relative;display:block;flex:0 0 12px}
-.hierarchy-title-icon:before{content:"";position:absolute;left:1px;top:3px;width:9px;height:7px;background:#ffff00;border:1px solid #000}
-.hierarchy-title-icon:after{content:"";position:absolute;left:2px;top:1px;width:4px;height:3px;background:#ffff00;border:1px solid #000;border-bottom:0}
-.hierarchy-body{
-  flex:1;
-  min-height:0;
-  overflow:auto;
-  padding:4px 3px 8px;
-  background:#fff;
-  border-top:1px solid #808080;
-}
-.tree-root,.tree-row{
-  width:100%;
-  min-height:19px;
-  height:19px;
-  padding:1px 3px;
-  border:1px solid transparent;
-  background:transparent;
-  color:#000;
-  display:flex;
-  align-items:center;
-  gap:3px;
-  text-align:left;
-  font:11px "MS Sans Serif",Tahoma,Arial,sans-serif;
-  white-space:nowrap;
-  overflow:hidden;
-}
-.tree-root:hover,.tree-row:hover{background:#000080;color:#fff}
-.tree-root.is-active{background:#000080;color:#fff;box-shadow:inset 1px 1px rgba(255,255,255,.2),inset -1px -1px rgba(0,0,0,.25)}
-.tree-node{position:relative;padding:0}
-.tree-node .tree-row:after{content:"";position:absolute;left:calc(var(--tree-depth) * 14px + 8px);top:-1px;bottom:-1px;border-left:1px dotted #808080;pointer-events:none;z-index:0}
-.tree-children{display:grid;grid-template-rows:0fr;overflow:hidden;transition:grid-template-rows .12s steps(3,end);position:relative}
-.tree-children.is-open{grid-template-rows:1fr}
-.tree-children>.tree-node{min-height:0;overflow:hidden}
-.tree-children.is-open>.tree-node{min-height:19px}
-.tree-expander{
-  width:11px;height:11px;min-width:11px;display:inline-grid;place-items:center;
-  background:#c0c0c0;color:#000;border:1px solid #404040;box-shadow:inset 1px 1px #fff,inset -1px -1px #808080;
-  font:11px/9px "MS Sans Serif",Tahoma,Arial,sans-serif;z-index:2;
-}
-.tree-expander-empty{border-color:transparent;background:transparent;box-shadow:none}
-.tree-small-icon{width:13px;height:13px;min-width:13px;position:relative;z-index:2}
-.tree-desktop-icon:before{content:"";position:absolute;left:1px;top:2px;width:10px;height:8px;background:#c0c0c0;border:1px solid #000}
-.tree-desktop-icon:after{content:"";position:absolute;left:3px;top:10px;width:6px;height:2px;background:#c0c0c0;border:1px solid #000;border-top:0}
-.tree-folder-icon:before{content:"";position:absolute;left:0;top:4px;width:12px;height:8px;background:#ffff00;border:1px solid #000}
-.tree-folder-icon:after{content:"";position:absolute;left:1px;top:2px;width:5px;height:3px;background:#ffff00;border:1px solid #000;border-bottom:0}
-.tree-label{position:relative;z-index:2;overflow:hidden;text-overflow:ellipsis;min-width:0}
-.tree-node.is-current>.tree-row{background:#000080;color:#fff}
-.tree-node.is-path:not(.is-current)>.tree-row{background:#dfdfdf}
-.tree-node.is-current>.tree-row:before{content:"";position:absolute;left:0;right:0;top:0;bottom:0;box-shadow:inset 1px 1px rgba(255,255,255,.15),inset -1px -1px rgba(0,0,0,.25);pointer-events:none}
-
-/* The desktop workspace starts after the permanent tree. */
-.desktop .desktop-icons{left:250px;right:8px;width:auto;display:flex;flex-direction:row;flex-wrap:wrap;align-content:flex-start;align-items:flex-start;gap:7px 9px;overflow:auto;}
-.desktop .desktop-icon{flex:0 0 86px}
-.desktop .desktop-navigation{left:250px!important;right:8px!important;top:7px!important}
-
-@keyframes startMenuIn{from{opacity:0;transform:scaleY(.96) translateY(-2px)}to{opacity:1;transform:scaleY(1) translateY(0)}}
-@keyframes modalFadeIn{from{opacity:0}to{opacity:1}}
-
-@media(max-width:700px){
-  .hierarchy-tree{left:3px;right:3px;width:auto;bottom:4px;max-height:40vh}
-  .desktop .desktop-icons{left:7px;right:7px;bottom:calc(40vh + 10px);overflow:hidden}
-  .desktop .desktop-navigation{left:7px!important;right:7px!important;}
+button:focus-visible,
+a:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible,
+[tabindex]:focus-visible {
+  outline: 1px dotted #000;
+  outline-offset: -4px;
 }
 
-@media(max-width:420px){
-  .hierarchy-tree{max-height:42vh}
-  .desktop .desktop-icons{bottom:calc(42vh + 8px)}
+button:active,
+.start-button:active,
+.quick-button:active,
+.start-item:active,
+.context-menu button:active,
+.tree-row:active {
+  transform: translate(1px, 1px);
 }
 
-@media(prefers-reduced-motion:reduce){
-  .start-menu,.shortcut-modal:not([hidden]),.tree-children,.desktop-icon,.start-item,.menu-shortcut,.tree-row,.quick-button,.start-button{animation:none!important;transition:none!important}
+.start-menu {
+  position: fixed !important;
+  left: 3px !important;
+  top: 27px !important;
+  bottom: auto !important;
+  border-radius: 0 !important;
+  background: var(--win98-bg) !important;
+  box-shadow: var(--win98-outset), 3px 3px 0 rgba(0,0,0,.4) !important;
+  animation: win98-menu-in .12s steps(2, end);
+}
+.start-item:hover,
+.menu-shortcut:hover,
+.context-menu button:hover,
+.tree-row:hover { background: var(--win98-blue); color: #fff; }
+
+.shortcut-modal[hidden] { display: none; }
+.shortcut-modal:not([hidden]) { animation: win98-menu-in .12s steps(2, end); }
+.shortcut-dialog,
+.context-menu {
+  border-radius: 0;
+  background: var(--win98-bg);
+  box-shadow: var(--win98-outset), 3px 3px 0 rgba(0,0,0,.4);
+}
+
+/* Permanent Explorer-style hierarchy. */
+.hierarchy-tree {
+  position: absolute;
+  left: 4px;
+  top: 7px;
+  bottom: 7px;
+  width: 236px;
+  display: flex;
+  flex-direction: column;
+  z-index: 10;
+  background: var(--win98-bg);
+  border: 1px solid #000;
+  box-shadow: 1px 1px #fff, 2px 2px #404040, 3px 3px 0 rgba(0,0,0,.28), inset 1px 1px #dfdfdf, inset -1px -1px #808080;
+}
+.hierarchy-titlebar {
+  min-height: 21px;
+  padding: 2px 4px;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  color: #fff;
+  background: var(--win98-blue);
+  font: 700 11px "MS Sans Serif", Tahoma, Arial, sans-serif;
+}
+.hierarchy-body {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  padding: 4px 3px 8px;
+  background: #fff;
+  border-top: 1px solid var(--win98-gray);
+}
+.tree-root,
+.tree-row {
+  width: 100%;
+  height: 19px;
+  min-height: 19px;
+  box-sizing: border-box;
+  padding: 1px 3px;
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  border: 1px solid transparent;
+  background: transparent;
+  color: #000;
+  text-align: left;
+  white-space: nowrap;
+  overflow: hidden;
+}
+.tree-root.is-active,
+.tree-node.is-current > .tree-row { background: var(--win98-blue); color: #fff; }
+.tree-children { overflow: hidden; }
+.tree-expander {
+  width: 11px;
+  height: 11px;
+  min-width: 11px;
+  display: inline-grid;
+  place-items: center;
+  padding: 0;
+  background: var(--win98-bg);
+  color: #000;
+  border: 1px solid #404040;
+  box-shadow: inset 1px 1px #fff, inset -1px -1px #808080;
+  font: 11px/9px "MS Sans Serif", Tahoma, Arial, sans-serif;
+}
+.tree-label { overflow: hidden; text-overflow: ellipsis; min-width: 0; }
+
+/* Desktop begins beside the permanent tree. */
+.desktop .desktop-icons {
+  left: 250px;
+  right: 8px;
+  width: auto;
+}
+.desktop .desktop-navigation { left: 250px !important; right: 8px !important; }
+
+.desktop-icon { border-radius: 0; }
+.desktop-icon:hover { background: rgba(0,0,128,.12); }
+.desktop-icon.selected,
+.desktop-icon[aria-selected="true"] { background: var(--win98-blue); color: #fff; }
+.desktop-icon .machine-url,
+.machine-url {
+  color: #000;
+  background: #fff;
+  border: 1px inset var(--win98-gray);
+  border-radius: 0;
+  font: 9px/12px "Courier New", monospace;
+  padding: 1px 3px;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+.desktop-icon .tag,
+.tag,
+.tag-pill {
+  display: inline-block;
+  margin: 1px 2px 0 0;
+  padding: 0 3px;
+  border: 1px solid;
+  border-color: #fff #808080 #808080 #fff;
+  border-radius: 0;
+  background: #dfdfdf;
+  color: #000;
+  font-size: 8px;
+  line-height: 12px;
+}
+
+.path-bar,
+.desktop-path,
+#desktop-path,
+.navigation-bar {
+  background: #fff;
+  color: #000;
+  border: 2px inset;
+  border-color: #808080 #fff #fff #808080;
+  border-radius: 0;
+}
+
+.status-bar,
+.desktop-status,
+#desktop-status,
+.taskbar,
+.top-taskbar,
+.bottom-taskbar,
+.quick-launch,
+.tray {
+  border-radius: 0;
+}
+
+@keyframes win98-menu-in {
+  from { opacity: 0; transform: translateY(-2px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@media (max-width: 700px) {
+  .hierarchy-tree { left: 3px; right: 3px; width: auto; bottom: 4px; max-height: 40vh; }
+  .desktop .desktop-icons { left: 7px; right: 7px; bottom: calc(40vh + 10px); overflow: auto; }
+  .desktop .desktop-navigation { left: 7px !important; right: 7px !important; }
+}
+
+@media (pointer: coarse) {
+  button, .tree-row, .tree-root, .start-item { min-height: 28px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: .001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: .001ms !important;
+    scroll-behavior: auto !important;
+  }
 }
