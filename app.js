@@ -26,13 +26,15 @@
   const closeButton = document.getElementById('shortcut-close');
   const cancelButton = document.getElementById('shortcut-cancel');
 
+  if (!start || !menu || !desktop || !icons || !desktopNavigation || !desktopBack) return;
+
   const catalogUrl = 'data/links.json';
   const folderIcons = [
     'https://cdn.jsdelivr.net/gh/ryokun6/ryos@main/public/resources/windows-icon-catalogs/win98/folders/directory-closed.png',
     'https://raw.githubusercontent.com/ryokun6/ryos/main/public/resources/windows-icon-catalogs/win98/folders/directory-closed.png'
   ];
 
-  const DOUBLE_CLICK_DELAY = 320;
+  const DOUBLE_CLICK_DELAY = 300;
   let catalogItems = new Map();
   let selectedItem = null;
   let clickTimer = null;
@@ -59,8 +61,9 @@
       const url = new URL(raw, document.baseURI);
       if (/^(https?:)$/i.test(url.protocol)) return url.href;
       if (url.protocol === 'file:') return '';
-      return url.pathname + url.search + url.hash;
-    } catch { return ''; }
+      if (url.origin === window.location.origin) return `${url.pathname}${url.search}${url.hash}`;
+    } catch {}
+    return '';
   }
 
   function faviconCandidates(item) {
@@ -157,6 +160,12 @@
     return ['Desktop', ...parts].join(' > ');
   }
 
+  function dispatchDesktopRender(folder) {
+    window.dispatchEvent(new CustomEvent('okenice:desktop-rendered', {
+      detail: { folderId: folder?.id || null, itemCount: icons.children.length }
+    }));
+  }
+
   function renderDesktop(ids, folder = null) {
     icons.innerHTML = ids.map(resolveItem).filter(Boolean).map(item => shortcutMarkup(item)).join('');
     bindFaviconImages(icons);
@@ -165,6 +174,7 @@
     desktopBack.disabled = !folder;
     desktopPath.textContent = folder ? folderPath(folder) : 'Desktop';
     desktop.setAttribute('aria-label', folder ? `Windows 98 Desktop — ${folder.title}` : 'Windows 98 Desktop');
+    dispatchDesktopRender(folder);
   }
 
   function openFolder(item) {
@@ -181,22 +191,30 @@
   }
 
   function renderCatalog(catalog) {
-    const sourceItems = Array.isArray(catalog.items) ? catalog.items : (catalog.desktop || []);
+    const sourceItems = Array.isArray(catalog.items) ? catalog.items : [];
     catalogItems = new Map(sourceItems.map(item => [item.id, item]));
     buildFolderRelations();
-    rootDesktopIds = Array.isArray(catalog.desktop) ? catalog.desktop : sourceItems.map(item => item.id);
+    rootDesktopIds = (Array.isArray(catalog.desktop) ? catalog.desktop : [])
+      .filter(id => resolveItem(id)?.type === 'folder');
     renderDesktop(rootDesktopIds);
-    const quickIds = Array.isArray(catalog.quickLaunch) ? catalog.quickLaunch : rootDesktopIds.slice(0, 4);
-    quickLaunch.innerHTML = quickIds.map(resolveItem).filter(Boolean).map(item => {
+
+    const quickIds = Array.isArray(catalog.quickLaunch) ? catalog.quickLaunch : [];
+    quickLaunch.innerHTML = quickIds.map(resolveItem).filter(item => item && item.type !== 'folder').map(item => {
       const href = safeHttpUrl(item.url);
       if (!href) return '';
       return `<a class="quick-button" href="${escapeHtml(href)}" target="_blank" rel="noopener noreferrer" aria-label="${escapeHtml(item.title)}">${iconMarkup(item, true)}</a>`;
     }).join('');
     bindFaviconImages(quickLaunch);
+
     Object.entries(catalog.menus || {}).forEach(([menuId, ids]) => {
       const panel = menu.querySelector(`[data-submenu-panel="${menuId}"]`);
-      if (panel) { panel.innerHTML = renderMenuEntries(ids).join(''); bindFaviconImages(panel); }
+      if (panel) {
+        panel.innerHTML = renderMenuEntries(ids).join('');
+        bindFaviconImages(panel);
+      }
     });
+
+    document.documentElement.dataset.appReady = 'true';
   }
 
   async function loadCatalog() {
@@ -204,7 +222,10 @@
       const response = await fetch(catalogUrl, { cache: 'no-store' });
       if (!response.ok) throw new Error(`Catalog HTTP ${response.status}`);
       renderCatalog(await response.json());
-    } catch (error) { console.error('Shortcut catalog unavailable:', error); }
+    } catch (error) {
+      console.error('Shortcut catalog unavailable:', error);
+      document.documentElement.dataset.appReady = 'error';
+    }
   }
 
   function openTarget(item, newWindow = false) {
@@ -304,9 +325,7 @@
       return;
     }
 
-    const startButton = event.target.closest('#start-button');
-    if (startButton) return;
-
+    if (event.target.closest('#start-button')) return;
     if (!event.target.closest('#start-menu')) closeStartMenu();
   });
 
@@ -317,8 +336,7 @@
     if (clickTimer) clearTimeout(clickTimer);
     clickTimer = null;
     clickTarget = null;
-    const item = catalogItems.get(link.dataset.shortcutId);
-    openTarget(item);
+    openTarget(catalogItems.get(link.dataset.shortcutId));
   });
 
   desktopBack.addEventListener('click', goBackFolder);
@@ -334,12 +352,12 @@
     }
   });
 
-  openButton.addEventListener('click', () => openTarget(selectedItem));
-  newWindowButton.addEventListener('click', () => openTarget(selectedItem, true));
-  closeButton.addEventListener('click', closeShortcutModal);
-  cancelButton.addEventListener('click', closeShortcutModal);
+  openButton?.addEventListener('click', () => openTarget(selectedItem));
+  newWindowButton?.addEventListener('click', () => openTarget(selectedItem, true));
+  closeButton?.addEventListener('click', closeShortcutModal);
+  cancelButton?.addEventListener('click', closeShortcutModal);
 
-  copyButton.addEventListener('click', async () => {
+  copyButton?.addEventListener('click', async () => {
     if (!selectedItem || selectedItem.type === 'folder') return;
     const value = safeHttpUrl(selectedItem.url);
     if (!value) return;
