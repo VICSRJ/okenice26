@@ -27,16 +27,9 @@
   const cancelButton = document.getElementById('shortcut-cancel');
 
   const catalogUrl = 'data/links.json';
-  const iconBase = 'data/icons/png/';
-  const folderIcon = `${iconBase}folder.png`;
-  const localIcons = {
-    chatgpt:'chatgpt.png',deepseek:'deepseek.png',gemini:'gemini.png',claude:'claude.png',
-    figma:'figma.png',youtube:'youtube.png',notion:'notion.png',spotify:'spotify.png',github:'github.png',
-    discord:'discord.png',telegram:'telegram.png',whatsapp:'whatsapp.png',gmail:'gmail.png',steam:'steam.png',
-    gog:'gog.png',davinci:'davinci.png',canva:'canva.png',nextjs:'nextjs.png',react:'react.png',vue:'vue.png',
-    nuxt:'nuxt.png',vite:'vite.png',vercel:'vercel.png',docker:'docker.png',kubernetes:'kubernetes.png',
-    tailwind:'tailwind.png',colab:'colab.png'
-  };
+
+  // Remote Windows 98 folder icon. The project intentionally keeps icon binaries out of the repo.
+  const folderIcon = 'https://raw.githubusercontent.com/ryokun6/ryos/main/public/resources/windows-icon-catalogs/win98/folders/directory-closed.png';
 
   const DOUBLE_CLICK_DELAY = 320;
   let catalogItems = new Map();
@@ -62,22 +55,19 @@
     if (/^data:image\//i.test(raw)) return raw;
     try {
       const url = new URL(raw, document.baseURI);
-      if (/^(https?:)$/i.test(url.protocol)) return url.href;
+      if (/^https?:$/i.test(url.protocol)) return url.href;
       if (url.protocol === 'file:') return '';
       return url.pathname + url.search + url.hash;
     } catch { return ''; }
   }
 
-  function localIcon(item) {
-    if (item?.type === 'folder') return folderIcon;
-    return localIcons[item?.id] ? `${iconBase}${localIcons[item.id]}` : '';
-  }
-
   function faviconCandidates(item) {
-    const local = localIcon(item);
     const saved = safeIconSource(item?.icon);
+    if (item?.type === 'folder') return [folderIcon];
+
     const targetUrl = safeHttpUrl(item?.url);
-    if (!targetUrl) return [...new Set([local, saved].filter(Boolean))];
+    if (!targetUrl) return [...new Set([saved].filter(Boolean))];
+
     const target = new URL(targetUrl);
     const remote = [
       `${target.origin}/apple-touch-icon.png`,
@@ -86,17 +76,15 @@
       `${target.origin}/favicon.ico`,
       `https://www.google.com/s2/favicons?domain=${encodeURIComponent(target.hostname)}&sz=128`
     ];
-    return [...new Set([local, ...remote, saved].filter(Boolean))];
+    return [...new Set([saved, ...remote].filter(Boolean))];
   }
 
   function iconMarkup(item, menuIcon = false) {
-    if (item.type === 'folder') {
-      return `<img class="${menuIcon ? 'menu-icon shortcut-menu-icon' : 'shortcut-icon'} favicon-image local-icon" src="${folderIcon}" alt="" loading="eager" decoding="async">`;
-    }
-    const candidates = faviconCandidates(item);
-    if (!candidates.length) return '<span class="icon-art icon-folder"></span>';
     const sizeClass = menuIcon ? 'menu-icon shortcut-menu-icon' : 'shortcut-icon';
-    return `<img class="${sizeClass} favicon-image" src="${escapeHtml(candidates[0])}" data-favicon-fallbacks="${escapeHtml(candidates.slice(1).join('|'))}" alt="" loading="eager" decoding="async" referrerpolicy="no-referrer">`;
+    const candidates = faviconCandidates(item);
+    if (!candidates.length) return '<span class="icon-art icon-folder" aria-hidden="true"></span>';
+
+    return `<img class="${sizeClass} favicon-image${item.type === 'folder' ? ' folder-icon' : ''}" src="${escapeHtml(candidates[0])}" data-favicon-fallbacks="${escapeHtml(candidates.slice(1).join('|'))}" alt="" loading="eager" decoding="async" referrerpolicy="no-referrer">`;
   }
 
   function bindFaviconImages(root = document) {
@@ -238,150 +226,118 @@
     openButton.disabled = false;
     openButton.textContent = isFolder ? 'Open Folder' : 'Open';
     newWindowButton.disabled = isFolder || !safeHttpUrl(item.url);
-    copyButton.disabled = isFolder || !safeHttpUrl(item.url);
-    openButton.focus();
   }
 
   function closeShortcutModal() {
     modal.hidden = true;
     selectedItem = null;
     icons.querySelectorAll('.desktop-icon.selected').forEach(node => node.classList.remove('selected'));
-    openButton.disabled = false; openButton.textContent = 'Open';
-    newWindowButton.disabled = false; copyButton.disabled = false;
   }
 
-  function hideSubmenus() {
-    menu.querySelectorAll('.submenu').forEach(panel => { panel.hidden = true; });
-    menu.querySelectorAll('[data-menu-folder-toggle].active').forEach(button => button.classList.remove('active'));
-    menu.querySelectorAll('.start-item.has-submenu.active').forEach(button => button.classList.remove('active'));
+  function openStartMenu() {
+    menu.hidden = false;
+    start.setAttribute('aria-expanded', 'true');
   }
 
-  function showPanel(panel, trigger) {
-    hideSubmenus();
-    panel.hidden = false;
-    if (trigger) trigger.classList.add('active');
-    const menuRect = menu.getBoundingClientRect();
-    if (panel.classList.contains('nested-submenu')) {
-      const triggerRect = trigger.getBoundingClientRect();
-      panel.style.top = `${Math.max(0, triggerRect.top - menuRect.top - 2)}px`;
-    } else {
-      const target = trigger || null;
-      const top = target ? target.getBoundingClientRect().top - menuRect.top - 2 : 0;
-      panel.style.top = `${Math.max(0, top)}px`;
-    }
+  function closeStartMenu() {
+    menu.hidden = true;
+    start.setAttribute('aria-expanded', 'false');
+    menu.querySelectorAll('.menu-group.open').forEach(group => group.classList.remove('open'));
+    menu.querySelectorAll('.nested-submenu:not([hidden])').forEach(panel => { panel.hidden = true; });
   }
 
-  start.addEventListener('click', event => { event.stopPropagation(); closeContext(); setStart(menu.hidden); });
-
-  menu.addEventListener('pointerover', event => {
-    const trigger = event.target.closest('.start-item.has-submenu');
-    if (!trigger || !menu.contains(trigger)) return;
-    const panel = menu.querySelector(`[data-submenu-panel="${CSS.escape(trigger.dataset.menuTarget)}"]`);
-    if (panel) showPanel(panel, trigger);
-  });
-
-  menu.addEventListener('click', event => {
-    const top = event.target.closest('.start-item.has-submenu');
-    if (top) {
-      event.preventDefault();
-      const panel = menu.querySelector(`[data-submenu-panel="${CSS.escape(top.dataset.menuTarget)}"]`);
-      if (panel) {
-        const nextOpen = panel.hidden;
-        nextOpen ? showPanel(panel, top) : hideSubmenus();
-      }
-      return;
-    }
-
-    const folderToggle = event.target.closest('[data-menu-folder-toggle]');
-    if (folderToggle) {
-      event.preventDefault();
-      const panel = menu.querySelector(`[data-menu-nested="${CSS.escape(folderToggle.dataset.menuFolderToggle)}"]`);
-      if (!panel) return;
-      const nextOpen = panel.hidden;
-      if (nextOpen) {
-        menu.querySelectorAll('.nested-submenu').forEach(node => { if (node !== panel) node.hidden = true; });
-        menu.querySelectorAll('[data-menu-folder-toggle].active').forEach(node => { if (node !== folderToggle) node.classList.remove('active'); });
-      }
-      panel.hidden = !nextOpen;
-      folderToggle.classList.toggle('active', nextOpen);
-      if (nextOpen && window.matchMedia('(max-width:700px)').matches) panel.scrollIntoView({ block:'nearest' });
-      return;
-    }
-
-    const link = event.target.closest('.submenu a[data-menu-shortcut-id]');
-    if (link) setStart(false);
-  });
+  function toggleNestedFolder(button) {
+    const group = button.closest('.menu-group');
+    const nested = group?.querySelector('.nested-submenu');
+    if (!nested) return;
+    const willOpen = nested.hidden;
+    group.classList.toggle('open', willOpen);
+    nested.hidden = !willOpen;
+  }
 
   document.addEventListener('click', event => {
-    if (!menu.hidden && !menu.contains(event.target) && event.target !== start) setStart(false);
-    if (!context.hidden && !context.contains(event.target)) closeContext();
-    if (!modal.hidden && !event.target.closest('.shortcut-dialog')) closeShortcutModal();
+    const desktopLink = event.target.closest('#desktop-icons .desktop-icon');
+    if (desktopLink) {
+      event.preventDefault();
+      const item = catalogItems.get(desktopLink.dataset.shortcutId);
+      if (!item) return;
+      if (clickTimer) clearTimeout(clickTimer);
+      clickTimer = setTimeout(() => {
+        selectDesktopShortcut(desktopLink);
+        clickTimer = null;
+      }, DOUBLE_CLICK_DELAY);
+      return;
+    }
+
+    const nestedButton = event.target.closest('[data-menu-folder-toggle]');
+    if (nestedButton) {
+      event.preventDefault();
+      toggleNestedFolder(nestedButton);
+      return;
+    }
+
+    const startButton = event.target.closest('#start-button');
+    if (startButton) return;
+
+    if (!event.target.closest('#start-menu')) closeStartMenu();
   });
 
-  document.addEventListener('keydown', event => {
-    if (event.key === 'Escape') { setStart(false); closeContext(); if (!modal.hidden) closeShortcutModal(); }
-    if (!modal.hidden && event.key === 'Enter' && document.activeElement === openButton && !openButton.disabled) openTarget(selectedItem, false);
-    if (modal.hidden && event.altKey && event.key === 'ArrowLeft' && currentFolderId) { event.preventDefault(); goBackFolder(); }
+  icons.addEventListener('dblclick', event => {
+    const link = event.target.closest('.desktop-icon');
+    if (!link) return;
+    event.preventDefault();
+    if (clickTimer) clearTimeout(clickTimer);
+    clickTimer = null;
+    const item = catalogItems.get(link.dataset.shortcutId);
+    openTarget(item);
   });
 
   desktopBack.addEventListener('click', goBackFolder);
 
-  icons.addEventListener('click', event => {
-    const icon = event.target.closest('.desktop-icon');
-    if (!icon) return;
-    event.preventDefault();
-    clearTimeout(clickTimer);
-    clickTimer = setTimeout(() => selectDesktopShortcut(icon), DOUBLE_CLICK_DELAY);
+  document.addEventListener('keydown', event => {
+    if (event.key === 'Escape') {
+      closeStartMenu();
+      closeShortcutModal();
+    }
+    if (event.altKey && event.key === 'ArrowLeft') {
+      if (currentFolderId) {
+        event.preventDefault();
+        goBackFolder();
+      }
+    }
   });
 
-  icons.addEventListener('dblclick', event => {
-    const icon = event.target.closest('.desktop-icon');
-    if (!icon) return;
-    event.preventDefault();
-    clearTimeout(clickTimer);
-    const item = catalogItems.get(icon.dataset.shortcutId);
-    if (item) openTarget(item, false);
-  });
-
-  desktop.addEventListener('contextmenu', event => {
-    if (event.target.closest('.desktop-icon') || event.target.closest('.desktop-navigation')) return;
-    event.preventDefault(); context.hidden = false;
-    context.style.left = `${Math.max(2, Math.min(event.clientX, window.innerWidth - 195))}px`;
-    context.style.top = `${Math.max(30, Math.min(event.clientY, window.innerHeight - 135))}px`;
-  });
-
-  context.addEventListener('click', event => {
-    const action = event.target.closest('[data-context]')?.dataset.context;
-    if (action === 'arrange' || action === 'lineup') { icons.style.left = '7px'; icons.style.top = '7px'; }
-    if (action === 'refresh') window.location.reload();
-    closeContext();
-  });
-
+  openButton.addEventListener('click', () => openTarget(selectedItem));
+  newWindowButton.addEventListener('click', () => openTarget(selectedItem, true));
   closeButton.addEventListener('click', closeShortcutModal);
   cancelButton.addEventListener('click', closeShortcutModal);
-  openButton.addEventListener('click', () => openTarget(selectedItem, false));
-  newWindowButton.addEventListener('click', () => openTarget(selectedItem, true));
+
   copyButton.addEventListener('click', async () => {
-    const href = safeHttpUrl(selectedItem?.url);
-    if (!href) return;
-    try { await navigator.clipboard.writeText(href); copyButton.textContent = 'Copied'; }
-    catch { copyButton.textContent = 'Copy failed'; }
-    window.setTimeout(() => { copyButton.textContent = 'Copy Link'; }, 900);
+    if (!selectedItem) return;
+    const value = selectedItem.type === 'folder' ? folderPath(selectedItem) : safeHttpUrl(selectedItem.url);
+    if (!value) return;
+    try {
+      await navigator.clipboard.writeText(value);
+      copyButton.textContent = 'Copied';
+      setTimeout(() => { copyButton.textContent = 'Copy'; }, 1000);
+    } catch {}
   });
 
-  function closeContext() { context.hidden = true; }
-  function setStart(open) {
-    menu.hidden = !open;
-    start.classList.toggle('pressed', open);
-    start.setAttribute('aria-expanded', String(open));
-    if (!open) hideSubmenus();
+  start.addEventListener('click', event => {
+    event.stopPropagation();
+    if (menu.hidden) openStartMenu();
+    else closeStartMenu();
+  });
+
+  if (clock) {
+    const updateClock = () => {
+      clock.textContent = new Intl.DateTimeFormat('cs-CZ', { hour: '2-digit', minute: '2-digit' }).format(new Date());
+    };
+    updateClock();
+    setInterval(updateClock, 15000);
   }
 
-  function updateClock() {
-    clock.textContent = new Date().toLocaleTimeString('en-US', { hour:'numeric', minute:'2-digit' });
-  }
+  context?.addEventListener('contextmenu', event => event.preventDefault());
 
   loadCatalog();
-  updateClock();
-  window.setInterval(updateClock, 1000);
 })();
