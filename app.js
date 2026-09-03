@@ -28,8 +28,11 @@
 
   const catalogUrl = 'data/links.json';
 
-  // Remote Windows 98 folder icon. The project intentionally keeps icon binaries out of the repo.
-  const folderIcon = 'https://raw.githubusercontent.com/ryokun6/ryos/main/public/resources/windows-icon-catalogs/win98/folders/directory-closed.png';
+  // Real Windows 98 folder art, hosted outside the repository with a browser-safe CDN fallback.
+  const folderIcons = [
+    'https://cdn.jsdelivr.net/gh/ryokun6/ryos@main/public/resources/windows-icon-catalogs/win98/folders/directory-closed.png',
+    'https://raw.githubusercontent.com/ryokun6/ryos/main/public/resources/windows-icon-catalogs/win98/folders/directory-closed.png'
+  ];
 
   const DOUBLE_CLICK_DELAY = 320;
   let catalogItems = new Map();
@@ -63,7 +66,7 @@
 
   function faviconCandidates(item) {
     const saved = safeIconSource(item?.icon);
-    if (item?.type === 'folder') return [folderIcon];
+    if (item?.type === 'folder') return folderIcons;
 
     const targetUrl = safeHttpUrl(item?.url);
     if (!targetUrl) return [...new Set([saved].filter(Boolean))];
@@ -87,6 +90,15 @@
     return `<img class="${sizeClass} favicon-image${item.type === 'folder' ? ' folder-icon' : ''}" src="${escapeHtml(candidates[0])}" data-favicon-fallbacks="${escapeHtml(candidates.slice(1).join('|'))}" alt="" loading="eager" decoding="async" referrerpolicy="no-referrer">`;
   }
 
+  function replaceWithFolderFallback(image) {
+    if (!image.classList.contains('folder-icon')) return false;
+    const fallback = document.createElement('span');
+    fallback.className = 'icon-art icon-folder folder-fallback';
+    fallback.setAttribute('aria-hidden', 'true');
+    image.replaceWith(fallback);
+    return true;
+  }
+
   function bindFaviconImages(root = document) {
     root.querySelectorAll('img[data-favicon-fallbacks]').forEach(image => {
       if (image.dataset.faviconBound === '1') return;
@@ -96,7 +108,10 @@
         const next = queue.shift();
         image.dataset.faviconFallbacks = queue.join('|');
         if (next) image.src = next;
-        else { image.classList.add('favicon-missing'); image.removeAttribute('src'); }
+        else if (!replaceWithFolderFallback(image)) {
+          image.classList.add('favicon-missing');
+          image.removeAttribute('src');
+        }
       });
     });
   }
