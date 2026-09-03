@@ -21,16 +21,41 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Validate source
+        run: |
+          node tools/validate.mjs
+          node --check app.js
+          node --check hierarchy-tree.js
+          node --check desktop-metadata.js
+          node --check runtime-guard.js
+          node --check tools/build-static.mjs
+
+      - name: Validate HTML
+        run: npx --yes html-validate index.html
+
+      - name: Build static artifact
+        run: node tools/build-static.mjs
+
+      - name: Verify artifact
+        run: |
+          test -s dist/index.html
+          test -s dist/data/links.json
+          test -f dist/.nojekyll
+          test -s dist/build-info.json
+          ! find dist -type f -name '*.map' | grep -q .
+
       - name: Configure Pages
         uses: actions/configure-pages@v5
 
-      - name: Validate static entrypoint
-        run: test -f index.html && test -f data/links.json
-
-      - name: Upload static artifact
+      - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@v3
         with:
-          path: .
+          path: dist
           retention-days: 7
 
   deploy:
@@ -40,6 +65,6 @@ jobs:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
     steps:
-      - name: Deploy to GitHub Pages
+      - name: Deploy Pages artifact
         id: deployment
-        uses: actions/deploy-pages@v5
+        uses: actions/deploy-pages@v4
