@@ -13,7 +13,6 @@
 .start-item,.menu-shortcut,.tree-row,.desktop-icon,.quick-button,.start-button{
   transition:background-color .08s steps(2,end),color .08s steps(2,end),transform .08s ease,box-shadow .08s ease;
 }
-
 .start-item:hover,.menu-shortcut:hover,.tree-row:hover{transform:translateX(1px)}
 .start-item:active,.menu-shortcut:active,.tree-row:active{transform:translate(1px,1px)}
 
@@ -87,9 +86,7 @@
 }
 .tree-root:hover,.tree-row:hover{background:#000080;color:#fff}
 .tree-node{position:relative;padding:0}
-.tree-node:not(:first-child) .tree-row:before,
-.tree-node .tree-row:after{content:"";position:absolute;pointer-events:none}
-.tree-node .tree-row:after{left:calc(var(--tree-depth) * 14px + 8px);top:-1px;bottom:-1px;border-left:1px dotted #808080;z-index:0}
+.tree-node .tree-row:after{content:"";position:absolute;left:calc(var(--tree-depth) * 14px + 8px);top:-1px;bottom:-1px;border-left:1px dotted #808080;z-index:0;pointer-events:none}
 .tree-children{display:grid;grid-template-rows:0fr;overflow:hidden;transition:grid-template-rows .12s steps(3,end);position:relative}
 .tree-children.is-open{grid-template-rows:1fr}
 .tree-children>.tree-node{min-height:0;overflow:hidden}
@@ -110,15 +107,19 @@
 .tree-node.is-path:not(.is-current)>.tree-row{background:#dfdfdf}
 .tree-node.is-current>.tree-row:before{content:"";position:absolute;left:0;right:0;top:0;bottom:0;box-shadow:inset 1px 1px rgba(255,255,255,.15),inset -1px -1px rgba(0,0,0,.25);pointer-events:none}
 
-/* When the hierarchy is visible, leave the desktop icons their own clear workspace. */
-.hierarchy-tree.is-visible ~ #desktop-icons{left:242px;transition:left .12s ease}
+.desktop.has-hierarchy .desktop-icons{left:242px;transition:left .12s ease}
 
 @keyframes startMenuIn{from{opacity:0;transform:scaleY(.96) translateY(-2px)}to{opacity:1;transform:scaleY(1) translateY(0)}}
 @keyframes modalFadeIn{from{opacity:0}to{opacity:1}}
 
 @media(max-width:700px){
+  .start-menu{top:37px!important;left:3px!important;width:calc(100vw - 8px)!important;max-width:calc(100vw - 8px)!important}
   .hierarchy-tree{left:3px;right:3px;width:auto;bottom:4px;max-height:42vh}
-  .hierarchy-tree.is-visible ~ #desktop-icons{left:7px}
+  .desktop.has-hierarchy .desktop-icons{left:7px}
+}
+
+@media(max-width:420px){
+  .start-menu{top:41px!important}
 }
 
 @media(prefers-reduced-motion:reduce){
