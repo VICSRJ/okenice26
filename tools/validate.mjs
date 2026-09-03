@@ -56,11 +56,18 @@ if (catalog) {
       }
     }
     if (item.parent && !ids.has(item.parent)) fail(`data/links.json: ${item.id} references missing parent ${item.parent}`);
+    if (item.type === 'app') {
+      if (!item.parent) fail(`data/links.json: app ${item.id} must belong to a folder`);
+      else if (itemById.get(item.parent)?.type !== 'folder') fail(`data/links.json: app ${item.id} parent ${item.parent} is not a folder`);
+    }
   }
 
   for (const key of ['desktop', 'quickLaunch']) {
     if (catalog[key] && !Array.isArray(catalog[key])) fail(`data/links.json: ${key} must be an array`);
-    for (const id of catalog[key] || []) if (!ids.has(id)) fail(`data/links.json: ${key} references missing item ${id}`);
+    for (const id of catalog[key] || []) {
+      if (!ids.has(id)) fail(`data/links.json: ${key} references missing item ${id}`);
+      else if (key === 'desktop' && itemById.get(id)?.type !== 'folder') fail(`data/links.json: desktop root may contain folders only; ${id} is ${itemById.get(id)?.type || 'unknown'}`);
+    }
   }
 
   for (const [menuId, menuItems] of Object.entries(catalog.menus || {})) {
@@ -81,10 +88,14 @@ for (const ref of localRefs) {
 if (/\b(?:src|href)=["']file:/i.test(html)) fail('index.html: file: URL remains in markup');
 
 const requiredFiles = [
-  'app.js', 'runtime-guard.js', 'hierarchy-tree.js', 'enhancements.css',
+  'app.js', 'runtime-guard.js', 'hierarchy-tree.js', 'enhancements.css', 'desktop-metadata.js', 'desktop-metadata.css',
   'styles.css', 'top-taskbar.css', 'shortcut-template.css', 'menu.css', 'data/links.json'
 ];
 for (const file of requiredFiles) if (!exists(file)) fail(`missing required file: ${file}`);
+
+for (const ref of ['desktop-metadata.js', 'desktop-metadata.css']) {
+  if (exists('index.html') && !html.includes(ref)) fail(`index.html: ${ref} is not linked`);
+}
 
 const tree = [];
 function collectFiles(dir = '.') {
@@ -100,6 +111,15 @@ for (const file of tree.filter(file => file.endsWith('.js'))) {
   const text = fs.readFileSync(path.join(root, file), 'utf8');
   if (/data\/icons\/png|icons\/png/i.test(text)) fail(`${file}: stale local PNG icon reference remains`);
 }
+
+const metadata = exists('desktop-metadata.js') ? fs.readFileSync(path.join(root, 'desktop-metadata.js'), 'utf8') : '';
+if (metadata && !/machineUrl/.test(metadata)) fail('desktop-metadata.js: machine URL rendering missing');
+if (metadata && !/desktop-tags/.test(metadata)) fail('desktop-metadata.js: desktop tag rendering missing');
+if (metadata && !/item\.parent/.test(metadata)) fail('desktop-metadata.js: folder relationship lookup missing');
+
+const metadataCss = exists('desktop-metadata.css') ? fs.readFileSync(path.join(root, 'desktop-metadata.css'), 'utf8') : '';
+if (metadataCss && !/desktop-machine-url/.test(metadataCss)) fail('desktop-metadata.css: machine URL styles missing');
+if (metadataCss && !/desktop-tag/.test(metadataCss)) fail('desktop-metadata.css: tag pill styles missing');
 
 const hierarchy = exists('hierarchy-tree.js') ? fs.readFileSync(path.join(root, 'hierarchy-tree.js'), 'utf8') : '';
 if (hierarchy && !/data\/links\.json/.test(hierarchy)) fail('hierarchy-tree.js: catalog source missing');
@@ -130,4 +150,4 @@ if (errors.length) {
   process.exit(1);
 }
 
-console.log(`Validation passed: ${jsonFiles.length} JSON file(s), ${tree.length} repository file(s), catalog relationships, hierarchy tree and folder icon mirrors checked.`);
+console.log(`Validation passed: ${jsonFiles.length} JSON file(s), ${tree.length} repository file(s), folder-owned desktop apps, metadata, hierarchy tree and remote folder icon mirrors checked.`);
