@@ -26,6 +26,17 @@
   const closeButton = document.getElementById('shortcut-close');
   const cancelButton = document.getElementById('shortcut-cancel');
   const catalogUrl = 'data/links.json';
+  const iconBase = 'data/icons/png/';
+  const folderIcon = 'icons/folder.icon.svg';
+
+  const localIcons = {
+    chatgpt:'chatgpt.png',deepseek:'deepseek.png',gemini:'gemini.png',claude:'claude.png',
+    figma:'figma.png',youtube:'youtube.png',notion:'notion.png',spotify:'spotify.png',github:'github.png',
+    discord:'discord.png',telegram:'telegram.png',whatsapp:'whatsapp.png',gmail:'gmail.png',steam:'steam.png',
+    gog:'gog.png',davinci:'davinci.png',canva:'canva.png',nextjs:'nextjs.png',react:'react.png',vue:'vue.png',
+    nuxt:'nuxt.png',vite:'vite.png',vercel:'vercel.png',docker:'docker.png',kubernetes:'kubernetes.png',
+    tailwind:'tailwind.png',colab:'colab.png'
+  };
 
   const DOUBLE_CLICK_DELAY = 320;
   let catalogItems = new Map();
@@ -43,8 +54,13 @@
   };
 
   const hideSubmenus = () => menu.querySelectorAll('.submenu').forEach(panel => { panel.hidden = true; });
-
   const escapeHtml = value => String(value).replace(/[&<>\"]/g, char => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '\"':'&quot;' }[char]));
+
+  function localIcon(item) {
+    if (item?.type === 'folder') return folderIcon;
+    const file = localIcons[item?.id];
+    return file ? iconBase + file : '';
+  }
 
   function faviconCandidates(item) {
     if (!item?.url || !/^https?:/i.test(item.url)) return [];
@@ -52,29 +68,23 @@
       const target = new URL(item.url);
       const origin = target.origin;
       const host = target.hostname;
-      const encodedHost = encodeURIComponent(host);
-      const candidates = [
-        `${origin}/apple-touch-icon.png`,
-        `${origin}/favicon.svg`,
-        `${origin}/favicon.png`,
-        `${origin}/favicon.ico`,
-        `https://www.google.com/s2/favicons?domain=${encodedHost}&sz=128`
+      const local = localIcon(item);
+      const remote = [
+        `${origin}/apple-touch-icon.png`, `${origin}/favicon.svg`, `${origin}/favicon.png`, `${origin}/favicon.ico`,
+        `https://www.google.com/s2/favicons?domain=${encodeURIComponent(host)}&sz=128`
       ];
-      if (item.icon) candidates.push(item.icon);
-      return [...new Set(candidates)];
+      return [...new Set([local, ...remote, item.icon || ''].filter(Boolean))];
     } catch {
-      return item.icon ? [item.icon] : [];
+      return [localIcon(item), item.icon || ''].filter(Boolean);
     }
   }
 
   function iconMarkup(item, menuIcon = false) {
-    if (item.type === 'folder') return `<span class="icon-art icon-folder ${menuIcon ? 'menu-icon' : ''}"></span>`;
+    if (item.type === 'folder') return `<img class="${menuIcon ? 'menu-icon shortcut-menu-icon' : 'shortcut-icon'} favicon-image local-icon" src="${folderIcon}" alt="" loading="eager" decoding="async">`;
     const candidates = faviconCandidates(item);
-    if (!candidates.length) return `<span class="icon-art icon-folder ${menuIcon ? 'menu-icon' : ''}"></span>`;
-    const primary = candidates[0];
-    const fallbackQueue = candidates.slice(1).join('|');
+    if (!candidates.length) return '<span class="icon-art icon-folder"></span>';
     const sizeClass = menuIcon ? 'menu-icon shortcut-menu-icon' : 'shortcut-icon';
-    return `<img class="${sizeClass} favicon-image" src="${escapeHtml(primary)}" data-favicon-fallbacks="${escapeHtml(fallbackQueue)}" alt="" loading="eager" decoding="async" referrerpolicy="no-referrer">`;
+    return `<img class="${sizeClass} favicon-image" src="${escapeHtml(candidates[0])}" data-favicon-fallbacks="${escapeHtml(candidates.slice(1).join('|'))}" alt="" loading="eager" decoding="async" referrerpolicy="no-referrer">`;
   }
 
   function bindFaviconImages(root = document) {
@@ -85,12 +95,8 @@
         const queue = (image.dataset.faviconFallbacks || '').split('|').filter(Boolean);
         const next = queue.shift();
         image.dataset.faviconFallbacks = queue.join('|');
-        if (next) {
-          image.src = next;
-          return;
-        }
-        image.classList.add('favicon-missing');
-        image.removeAttribute('src');
+        if (next) image.src = next;
+        else { image.classList.add('favicon-missing'); image.removeAttribute('src'); }
       });
     });
   }
@@ -104,25 +110,18 @@
   const resolveItem = id => catalogItems.get(id) || null;
 
   function renderMenuEntries(ids, depth = 0) {
-    const entries = [];
-    ids.forEach(id => {
-      const item = resolveItem(id);
-      if (!item) return;
-      entries.push(shortcutMarkup(item, true, depth > 0));
-      if (item.type === 'folder' && Array.isArray(item.children) && item.children.length) {
-        entries.push(`<div class="nested-folder" data-folder-id="${escapeHtml(item.id)}">${renderMenuEntries(item.children, depth + 1).join('')}</div>`);
-      }
+    return ids.map(id => resolveItem(id)).filter(Boolean).flatMap(item => {
+      const entries = [shortcutMarkup(item, true, depth > 0)];
+      if (item.type === 'folder' && Array.isArray(item.children) && item.children.length) entries.push(`<div class="nested-folder" data-folder-id="${escapeHtml(item.id)}">${renderMenuEntries(item.children, depth + 1).join('')}</div>`);
+      return entries;
     });
-    return entries;
   }
 
   function buildFolderRelations() {
     parentFolders.clear();
     catalogItems.forEach(item => {
       if (item.type !== 'folder' || !Array.isArray(item.children)) return;
-      item.children.forEach(childId => {
-        if (!parentFolders.has(childId)) parentFolders.set(childId, item.id);
-      });
+      item.children.forEach(child => { if (!parentFolders.has(child)) parentFolders.set(child, item.id); });
     });
   }
 
@@ -169,20 +168,12 @@
     buildFolderRelations();
     rootDesktopIds = Array.isArray(catalog.desktop) ? catalog.desktop : sourceItems.map(item => item.id);
     renderDesktop(rootDesktopIds);
-
     const quickIds = Array.isArray(catalog.quickLaunch) ? catalog.quickLaunch : rootDesktopIds.slice(0, 4);
-    quickLaunch.innerHTML = quickIds.map(resolveItem).filter(Boolean).map(item => {
-      const external = /^https?:/i.test(item.url || '');
-      return `<a class="quick-button" href="${escapeHtml(item.url || '#')}"${external ? ' target="_blank" rel="noopener"' : ''} aria-label="${escapeHtml(item.title)}">${iconMarkup(item, true)}</a>`;
-    }).join('');
+    quickLaunch.innerHTML = quickIds.map(resolveItem).filter(Boolean).map(item => `<a class="quick-button" href="${escapeHtml(item.url || '#')}" target="_blank" rel="noopener" aria-label="${escapeHtml(item.title)}">${iconMarkup(item, true)}</a>`).join('');
     bindFaviconImages(quickLaunch);
-
     Object.entries(catalog.menus || {}).forEach(([menuId, ids]) => {
       const panel = menu.querySelector(`[data-submenu-panel="${menuId}"]`);
-      if (panel) {
-        panel.innerHTML = renderMenuEntries(ids);
-        bindFaviconImages(panel);
-      }
+      if (panel) { panel.innerHTML = renderMenuEntries(ids).join(''); bindFaviconImages(panel); }
     });
   }
 
@@ -191,9 +182,7 @@
       const response = await fetch(catalogUrl, { cache: 'no-store' });
       if (!response.ok) throw new Error(`Catalog HTTP ${response.status}`);
       renderCatalog(await response.json());
-    } catch (error) {
-      console.error('Shortcut catalog unavailable:', error);
-    }
+    } catch (error) { console.error('Shortcut catalog unavailable:', error); }
   }
 
   function openTarget(item, newWindow = false) {
@@ -211,9 +200,7 @@
     const item = catalogItems.get(link.dataset.shortcutId);
     if (!item) return;
     icons.querySelectorAll('.desktop-icon.selected').forEach(node => node.classList.remove('selected'));
-    link.classList.add('selected');
-    selectedItem = item;
-    openShortcutModal(item);
+    link.classList.add('selected'); selectedItem = item; openShortcutModal(item);
   }
 
   function openShortcutModal(item) {
@@ -221,60 +208,38 @@
     const childCount = Array.isArray(item.children) ? item.children.length : 0;
     modalName.textContent = item.title;
     modalKind.textContent = isFolder ? `Folder · ${childCount} item${childCount === 1 ? '' : 's'}` : 'Internet shortcut';
-    modalPreview.innerHTML = iconMarkup(item);
-    bindFaviconImages(modalPreview);
+    modalPreview.innerHTML = iconMarkup(item); bindFaviconImages(modalPreview);
     detailName.textContent = item.title;
     detailTarget.textContent = isFolder ? folderPath(item) : (item.url || '—');
     detailType.textContent = item.type || 'app';
     detailCategory.textContent = item.category || '—';
     detailDescription.textContent = item.description || (isFolder ? 'Folder shortcut. This folder can contain links and other folders.' : 'Shortcut to a web application or page.');
-    modal.hidden = false;
-    openButton.disabled = false;
-    openButton.textContent = isFolder ? 'Open Folder' : 'Open';
-    newWindowButton.disabled = isFolder;
-    copyButton.disabled = isFolder;
-    openButton.focus();
+    modal.hidden = false; openButton.disabled = false; openButton.textContent = isFolder ? 'Open Folder' : 'Open';
+    newWindowButton.disabled = isFolder; copyButton.disabled = isFolder; openButton.focus();
   }
 
   function closeShortcutModal() {
-    modal.hidden = true;
-    selectedItem = null;
+    modal.hidden = true; selectedItem = null;
     icons.querySelectorAll('.desktop-icon.selected').forEach(node => node.classList.remove('selected'));
-    openButton.disabled = false;
-    openButton.textContent = 'Open';
-    newWindowButton.disabled = false;
-    copyButton.disabled = false;
+    openButton.disabled = false; openButton.textContent = 'Open'; newWindowButton.disabled = false; copyButton.disabled = false;
   }
 
-  start.addEventListener('click', event => {
-    event.stopPropagation();
-    closeContext();
-    setStart(menu.hidden);
-  });
+  start.addEventListener('click', event => { event.stopPropagation(); closeContext(); setStart(menu.hidden); });
 
   menu.addEventListener('mouseover', event => {
-    const item = event.target.closest('.start-item');
-    if (!item) return;
-    const target = item.getAttribute('href')?.slice(1);
-    const panel = menu.querySelector(`[data-submenu-panel="${target}"]`);
-    if (!panel) return;
-    hideSubmenus();
-    panel.hidden = false;
-    const menuRect = menu.getBoundingClientRect();
-    const itemRect = item.getBoundingClientRect();
+    const item = event.target.closest('.start-item'); if (!item) return;
+    const target = item.getAttribute('href')?.slice(1); const panel = menu.querySelector(`[data-submenu-panel="${target}"]`); if (!panel) return;
+    hideSubmenus(); panel.hidden = false;
+    const menuRect = menu.getBoundingClientRect(); const itemRect = item.getBoundingClientRect();
     panel.style.top = `${Math.max(0, itemRect.top - menuRect.top - 1)}px`;
   });
 
   menu.addEventListener('click', event => {
-    const link = event.target.closest('.submenu a');
-    if (!link) return;
+    const link = event.target.closest('.submenu a'); if (!link) return;
     const item = catalogItems.get(link.dataset.menuShortcutId);
     if (item?.type === 'folder') {
-      event.preventDefault();
-      link.classList.toggle('expanded');
-      const folder = menu.querySelector(`.nested-folder[data-folder-id="${CSS.escape(item.id)}"]`);
-      if (folder) folder.classList.toggle('expanded');
-      return;
+      event.preventDefault(); link.classList.toggle('expanded');
+      const folder = menu.querySelector(`.nested-folder[data-folder-id="${CSS.escape(item.id)}"]`); if (folder) folder.classList.toggle('expanded'); return;
     }
     setStart(false);
   });
@@ -286,76 +251,49 @@
   });
 
   document.addEventListener('keydown', event => {
-    if (event.key === 'Escape') {
-      setStart(false);
-      closeContext();
-      if (!modal.hidden) closeShortcutModal();
-    }
+    if (event.key === 'Escape') { setStart(false); closeContext(); if (!modal.hidden) closeShortcutModal(); }
     if (!modal.hidden && event.key === 'Enter' && document.activeElement === openButton && !openButton.disabled) openTarget(selectedItem, false);
-    if (modal.hidden && event.altKey && event.key === 'ArrowLeft' && currentFolderId) {
-      event.preventDefault();
-      goBackFolder();
-    }
+    if (modal.hidden && event.altKey && event.key === 'ArrowLeft' && currentFolderId) { event.preventDefault(); goBackFolder(); }
   });
 
   desktopBack.addEventListener('click', goBackFolder);
 
   icons.addEventListener('click', event => {
-    const icon = event.target.closest('.desktop-icon');
-    if (!icon) return;
-    event.preventDefault();
-    window.clearTimeout(clickTimer);
-    clickTimer = window.setTimeout(() => selectDesktopShortcut(icon), DOUBLE_CLICK_DELAY);
+    const icon = event.target.closest('.desktop-icon'); if (!icon) return;
+    event.preventDefault(); clearTimeout(clickTimer); clickTimer = setTimeout(() => selectDesktopShortcut(icon), DOUBLE_CLICK_DELAY);
   });
 
   icons.addEventListener('dblclick', event => {
-    const icon = event.target.closest('.desktop-icon');
-    if (!icon) return;
-    event.preventDefault();
-    window.clearTimeout(clickTimer);
-    const item = catalogItems.get(icon.dataset.shortcutId);
-    if (!item) return;
-    openTarget(item, false);
+    const icon = event.target.closest('.desktop-icon'); if (!icon) return;
+    event.preventDefault(); clearTimeout(clickTimer);
+    const item = catalogItems.get(icon.dataset.shortcutId); if (item) openTarget(item, false);
   });
 
   desktop.addEventListener('contextmenu', event => {
     if (event.target.closest('.desktop-icon') || event.target.closest('.desktop-navigation')) return;
-    event.preventDefault();
-    context.hidden = false;
+    event.preventDefault(); context.hidden = false;
     context.style.left = `${Math.max(2, Math.min(event.clientX, window.innerWidth - 195))}px`;
     context.style.top = `${Math.max(30, Math.min(event.clientY, window.innerHeight - 135))}px`;
   });
 
   context.addEventListener('click', event => {
     const action = event.target.closest('[data-context]')?.dataset.context;
-    if (action === 'arrange' || action === 'lineup') {
-      icons.style.left = '7px';
-      icons.style.top = '7px';
-    }
-    if (action === 'refresh') window.location.reload();
-    closeContext();
+    if (action === 'arrange' || action === 'lineup') { icons.style.left = '7px'; icons.style.top = '7px'; }
+    if (action === 'refresh') window.location.reload(); closeContext();
   });
 
-  closeButton.addEventListener('click', closeShortcutModal);
-  cancelButton.addEventListener('click', closeShortcutModal);
+  closeButton.addEventListener('click', closeShortcutModal); cancelButton.addEventListener('click', closeShortcutModal);
   openButton.addEventListener('click', () => openTarget(selectedItem, false));
   newWindowButton.addEventListener('click', () => openTarget(selectedItem, true));
   copyButton.addEventListener('click', async () => {
     if (!selectedItem || selectedItem.type === 'folder') return;
-    try {
-      await navigator.clipboard.writeText(selectedItem.url);
-      copyButton.textContent = 'Copied';
-      window.setTimeout(() => { copyButton.textContent = 'Copy Link'; }, 900);
-    } catch {
-      copyButton.textContent = 'Copy failed';
-      window.setTimeout(() => { copyButton.textContent = 'Copy Link'; }, 900);
-    }
+    try { await navigator.clipboard.writeText(selectedItem.url); copyButton.textContent = 'Copied'; }
+    catch { copyButton.textContent = 'Copy failed'; }
+    window.setTimeout(() => { copyButton.textContent = 'Copy Link'; }, 900);
   });
 
   function closeContext() { context.hidden = true; }
   function updateClock() { clock.textContent = new Date().toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' }); }
 
-  loadCatalog();
-  updateClock();
-  window.setInterval(updateClock, 1000);
+  loadCatalog(); updateClock(); window.setInterval(updateClock, 1000);
 })();
