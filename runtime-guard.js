@@ -1,8 +1,16 @@
 (() => {
   'use strict';
 
-  // One remote retro folder icon. No bundled PNG icon directory is required.
-  const REMOTE_FOLDER_ICON = 'https://upload.wikimedia.org/wikipedia/commons/0/0b/Windows_95_FOLDER.png';
+  // Only the explicit remote Windows 98 folder asset is allowed as a remote image.
+  const REMOTE_FOLDER_ICON = 'https://raw.githubusercontent.com/ryokun6/ryos/main/public/resources/windows-icon-catalogs/win98/folders/directory-closed.png';
+  const isRemoteFolderIcon = value => {
+    try {
+      const url = new URL(String(value || ''), document.baseURI);
+      return url.href === REMOTE_FOLDER_ICON;
+    } catch {
+      return false;
+    }
+  };
 
   const isFileUrl = value => /^\s*file:/i.test(String(value || ''));
   const isHttpUrl = value => /^\s*https?:/i.test(String(value || ''));
@@ -21,13 +29,13 @@
     if (/data\/icons\/png\/folder\.png(?:$|[?#])/i.test(raw) || /(?:^|\/)folder\.png(?:$|[?#])/i.test(raw)) {
       return REMOTE_FOLDER_ICON;
     }
-    if (isHttpUrl(raw)) {
-      return dataImageFallback(image);
-    }
+    if (isRemoteFolderIcon(raw)) return REMOTE_FOLDER_ICON;
+    if (isHttpUrl(raw)) return dataImageFallback(image);
     try {
       const url = new URL(raw, document.baseURI);
       if (url.protocol === 'file:') return '';
       if (url.protocol === 'data:') return isDataImage(url.href) ? url.href : '';
+      if (url.href === REMOTE_FOLDER_ICON) return REMOTE_FOLDER_ICON;
       if (url.protocol === 'http:' || url.protocol === 'https:') return dataImageFallback(image);
       return url.pathname + url.search + url.hash;
     } catch {
