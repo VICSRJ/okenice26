@@ -36,10 +36,6 @@
     return chain;
   }
 
-  function pathTitles(id) {
-    return pathIds(id).map(folderId => items.get(folderId)?.title).filter(Boolean);
-  }
-
   function buildRelations(catalog) {
     items = new Map((Array.isArray(catalog.items) ? catalog.items : []).map(item => [item.id, item]));
     parents = new Map();
@@ -100,6 +96,7 @@
     const body = pane.querySelector('.tree-root-children');
     body.innerHTML = roots.map(item => folderButton(item, 0)).join('');
     pane.classList.toggle('is-visible', Boolean(currentFolderId));
+    desktop.classList.toggle('has-hierarchy', Boolean(currentFolderId));
 
     pane.querySelectorAll('[data-tree-folder]').forEach(button => {
       button.addEventListener('click', event => {
@@ -117,9 +114,8 @@
       });
     });
 
-    const activePath = pathIds(currentFolderId);
-    activePath.forEach(id => expanded.add(id));
     if (currentFolderId) {
+      pathIds(currentFolderId).forEach(id => expanded.add(id));
       queueMicrotask(() => {
         pane.querySelector(`[data-tree-node="${CSS.escape(currentFolderId)}"]`)?.scrollIntoView({ block: 'nearest' });
       });
@@ -132,7 +128,8 @@
       const back = desktopBack;
       let guard = 0;
       const tick = () => {
-        if (!document.getElementById('desktop-navigation') || document.getElementById('desktop-navigation').hidden || guard++ > 32) {
+        const navigation = document.getElementById('desktop-navigation');
+        if (!navigation || navigation.hidden || guard++ > 32) {
           resolve();
           return;
         }
@@ -187,14 +184,10 @@
     try {
       const response = await fetch(catalogUrl, { cache: 'no-store' });
       if (!response.ok) throw new Error(`Catalog HTTP ${response.status}`);
-      const catalog = await response.json();
-      buildRelations(catalog);
+      buildRelations(await response.json());
       createPane();
       syncFromDesktop();
-
-      const observer = new MutationObserver(() => {
-        window.requestAnimationFrame(syncFromDesktop);
-      });
+      const observer = new MutationObserver(() => window.requestAnimationFrame(syncFromDesktop));
       observer.observe(icons, { childList: true });
     } catch (error) {
       console.warn('Hierarchy tree unavailable:', error);
