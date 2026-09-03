@@ -46,7 +46,6 @@
     source.forEach(item => {
       if (item?.id && item?.parent) parents.set(item.id, item.parent);
     });
-
     source.forEach(item => {
       if (item?.type !== 'folder' || !Array.isArray(item.children)) return;
       item.children.forEach(childId => {
@@ -82,7 +81,18 @@
       </div>`;
 
     desktop.appendChild(pane);
-    pane.querySelector('[data-tree-root]')?.addEventListener('click', () => navigateToFolder(null));
+    const root = pane.querySelector('[data-tree-root]');
+    root?.addEventListener('click', () => navigateToFolder(null));
+    root?.addEventListener('keydown', event => {
+      if (event.key === 'Enter' || event.key === 'ArrowRight') {
+        event.preventDefault();
+        navigateToFolder(null);
+      }
+      if (event.key === 'ArrowDown') {
+        event.preventDefault();
+        pane.querySelector('[data-tree-folder]')?.focus();
+      }
+    });
     return pane;
   }
 
@@ -104,7 +114,16 @@
   }
 
   function visibleFolderButtons(pane) {
-    return [...pane.querySelectorAll('[data-tree-folder]')].filter(button => button.closest('.tree-children')?.classList.contains('is-open') !== false);
+    return [...pane.querySelectorAll('[data-tree-folder]')].filter(button => {
+      const ancestors = [...button.closest('.tree-node')?.parentElement?.querySelectorAll?.('[data-tree-folder]') || []];
+      void ancestors;
+      let branch = button.parentElement.closest('.tree-children');
+      while (branch) {
+        if (!branch.classList.contains('is-open')) return false;
+        branch = branch.parentElement.closest('.tree-children');
+      }
+      return true;
+    });
   }
 
   function render() {
@@ -122,7 +141,6 @@
       button.addEventListener('click', event => {
         const id = event.currentTarget.dataset.treeFolder;
         const hasChildren = childrenOf(id).length > 0;
-
         if (hasChildren) {
           expanded.has(id) ? expanded.delete(id) : expanded.add(id);
           const node = pane.querySelector(`[data-tree-node="${CSS.escape(id)}"]`);
@@ -130,21 +148,15 @@
           children?.classList.toggle('is-open', expanded.has(id));
           event.currentTarget.setAttribute('aria-expanded', String(expanded.has(id)));
         }
-
         if (currentFolderId !== id) navigateToFolder(id);
         event.stopPropagation();
       });
-    });
-
-    pane.querySelectorAll('[data-tree-folder]').forEach(button => {
       button.addEventListener('keydown', event => handleTreeKeydown(event, pane, button));
     });
 
     if (currentFolderId) {
       pathIds(currentFolderId).forEach(id => expanded.add(id));
-      queueMicrotask(() => {
-        pane.querySelector(`[data-tree-node="${CSS.escape(currentFolderId)}"]`)?.scrollIntoView({ block: 'nearest' });
-      });
+      queueMicrotask(() => pane.querySelector(`[data-tree-node="${CSS.escape(currentFolderId)}"]`)?.scrollIntoView({ block: 'nearest' }));
     }
   }
 
@@ -159,7 +171,6 @@
       navigateToFolder(id);
       return;
     }
-
     if (event.key === 'ArrowRight') {
       if (children.length && !isOpen) {
         event.preventDefault();
@@ -167,14 +178,10 @@
         render();
       } else if (children.length && isOpen) {
         const first = pane.querySelector(`[data-tree-children="${CSS.escape(id)}"] [data-tree-folder]`);
-        if (first) {
-          event.preventDefault();
-          first.focus();
-        }
+        if (first) { event.preventDefault(); first.focus(); }
       }
       return;
     }
-
     if (event.key === 'ArrowLeft') {
       if (children.length && isOpen) {
         event.preventDefault();
@@ -182,37 +189,26 @@
         render();
       } else if (parentId) {
         const parentButton = pane.querySelector(`[data-tree-folder="${CSS.escape(parentId)}"]`);
-        if (parentButton) {
-          event.preventDefault();
-          parentButton.focus();
-        }
+        if (parentButton) { event.preventDefault(); parentButton.focus(); }
       }
       return;
     }
-
     if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
       const buttons = visibleFolderButtons(pane);
       const index = buttons.indexOf(button);
       const nextIndex = event.key === 'ArrowDown' ? index + 1 : index - 1;
-      if (buttons[nextIndex]) {
-        event.preventDefault();
-        buttons[nextIndex].focus();
-      }
+      if (buttons[nextIndex]) { event.preventDefault(); buttons[nextIndex].focus(); }
     }
   }
 
   function resetToRoot() {
     if (!currentFolderId) return Promise.resolve();
-
     return new Promise(resolve => {
       const back = desktopBack;
       let guard = 0;
       const tick = () => {
         const navigation = document.getElementById('desktop-navigation');
-        if (!navigation || navigation.hidden || guard++ > 32) {
-          resolve();
-          return;
-        }
+        if (!navigation || navigation.hidden || guard++ > 32) { resolve(); return; }
         back?.click();
         setTimeout(tick, 60);
       };
@@ -221,8 +217,7 @@
   }
 
   function findDesktopFolder(id) {
-    return [...icons.querySelectorAll('.desktop-icon.is-folder')]
-      .find(node => node.dataset.shortcutId === id) || null;
+    return [...icons.querySelectorAll('.desktop-icon.is-folder')].find(node => node.dataset.shortcutId === id) || null;
   }
 
   function openVisibleFolder(id) {
@@ -235,16 +230,13 @@
   async function navigateToFolder(targetId) {
     if (navigating || targetId === currentFolderId) return;
     navigating = true;
-
     try {
       const chain = targetId ? pathIds(targetId) : [];
       await resetToRoot();
-
       for (const id of chain) {
         if (!openVisibleFolder(id)) break;
         await new Promise(resolve => setTimeout(resolve, 110));
       }
-
       currentFolderId = targetId;
       expanded = new Set(chain);
       render();
@@ -256,13 +248,11 @@
   function syncFromDesktop() {
     const navigation = document.getElementById('desktop-navigation');
     const path = document.getElementById('desktop-path');
-
     if (!navigation || navigation.hidden) currentFolderId = null;
     else {
       const title = (path?.textContent || '').split(' > ').at(-1);
       currentFolderId = folders().find(item => item.title === title)?.id || currentFolderId;
     }
-
     render();
   }
 
@@ -273,7 +263,6 @@
       buildRelations(await response.json());
       createPane();
       syncFromDesktop();
-
       const observer = new MutationObserver(() => window.requestAnimationFrame(syncFromDesktop));
       observer.observe(icons, { childList: true });
     } catch (error) {
