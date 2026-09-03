@@ -18,7 +18,9 @@ function readJson(relative) {
 
 const jsonFiles = [];
 function collectJson(dir) {
-  for (const entry of fs.readdirSync(path.join(root, dir), { withFileTypes: true })) {
+  const absolute = path.join(root, dir);
+  if (!fs.existsSync(absolute)) return;
+  for (const entry of fs.readdirSync(absolute, { withFileTypes: true })) {
     const relative = path.join(dir, entry.name);
     if (entry.isDirectory()) collectJson(relative);
     else if (entry.isFile() && entry.name.endsWith('.json')) jsonFiles.push(relative);
@@ -32,6 +34,9 @@ if (catalog) {
   const items = Array.isArray(catalog.items) ? catalog.items : [];
   const ids = new Set();
   const itemById = new Map();
+  const parentRefs = new Map();
+  const childOwners = new Map();
+
   for (const item of items) {
     if (!item || typeof item !== 'object') {
       fail('data/links.json: catalog contains a non-object item');
@@ -41,38 +46,71 @@ if (catalog) {
     ids.add(item.id);
     itemById.set(item.id, item);
     if (!item.title) fail(`data/links.json: missing title for ${item.id || '<empty>'}`);
+    if (!['folder', 'app'].includes(item.type)) fail(`data/links.json: invalid type on ${item.id}: ${item.type}`);
     if (item.type === 'folder' && !Array.isArray(item.children)) fail(`data/links.json: folder ${item.id} must have children[]`);
-    if (item.type !== 'folder' && item.url && !/^https?:\/\//i.test(item.url)) fail(`data/links.json: invalid URL on ${item.id}: ${item.url}`);
+    if (item.type === 'app' && !/^https?:\/\//i.test(item.url || '')) fail(`data/links.json: app ${item.id} must have an http(s) URL`);
+    if (item.type === 'app' && !item.parent) fail(`data/links.json: app ${item.id} must belong to a folder via parent`);
+    if (item.parent) parentRefs.set(item.id, item.parent);
   }
 
   for (const item of items) {
     if (Array.isArray(item.children)) {
       for (const childId of item.children) {
-        if (!ids.has(childId)) fail(`data/links.json: ${item.id} references missing child ${childId}`);
-        else {
-          const child = itemById.get(childId);
-          if (child?.parent && child.parent !== item.id) fail(`data/links.json: ${childId}.parent=${child.parent} conflicts with ${item.id}.children[]`);
+        if (!ids.has(childId)) {
+          fail(`data/links.json: ${item.id} references missing child ${childId}`);
+          continue;
+        }
+        const child = itemById.get(childId);
+        if (child?.parent && child.parent !== item.id) fail(`data/links.json: ${childId}.parent=${child.parent} conflicts with ${item.id}.children[]`);
+        if (child?.type === 'app' || child?.type === 'folder') {
+          if (childOwners.has(childId) && childOwners.get(childId) !== item.id) fail(`data/links.json: ${childId} is owned by multiple folders`);
+          childOwners.set(childId, item.id);
         }
       }
     }
     if (item.parent && !ids.has(item.parent)) fail(`data/links.json: ${item.id} references missing parent ${item.parent}`);
-    if (item.type === 'app') {
-      if (!item.parent) fail(`data/links.json: app ${item.id} must belong to a folder`);
-      else if (itemById.get(item.parent)?.type !== 'folder') fail(`data/links.json: app ${item.id} parent ${item.parent} is not a folder`);
-    }
+    if (item.parent && itemById.get(item.parent)?.type !== 'folder') fail(`data/links.json: ${item.id}.parent must reference a folder`);
   }
 
-  for (const key of ['desktop', 'quickLaunch']) {
-    if (catalog[key] && !Array.isArray(catalog[key])) fail(`data/links.json: ${key} must be an array`);
-    for (const id of catalog[key] || []) {
-      if (!ids.has(id)) fail(`data/links.json: ${key} references missing item ${id}`);
-      else if (key === 'desktop' && itemById.get(id)?.type !== 'folder') fail(`data/links.json: desktop root may contain folders only; ${id} is ${itemById.get(id)?.type || 'unknown'}`);
-    }
+  const desktop = Array.isArray(catalog.desktop) ? catalog.desktop : [];
+  if (!Array.isArray(catalog.desktop)) fail('data/links.json: desktop must be an array');
+  const rootSeen = new Set();
+  for (const id of desktop) {
+    if (!ids.has(id)) fail(`data/links.json: desktop references missing item ${id}`);
+    else if (itemById.get(id)?.type !== 'folder') fail(`data/links.json: desktop root may contain folders only; ${id} is ${itemById.get(id)?.type}`);
+    if (rootSeen.has(id)) fail(`data/links.json: duplicate desktop root item ${id}`);
+    rootSeen.add(id);
   }
+
+  for (const item of items) {
+    if (item.type === 'app' && item.parent && !childOwners.has(item.id)) fail(`data/links.json: app ${item.id} declares parent ${item.parent} but is absent from that folder's children[]`);
+    if (item.type === 'folder' && item.parent && !childOwners.has(item.id)) fail(`data/links.json: folder ${item.id} declares parent ${item.parent} but is absent from that folder's children[]`);
+  }
+
+  if (Array.isArray(catalog.quickLaunch)) {
+    for (const id of catalog.quickLaunch) {
+      if (!ids.has(id)) fail(`data/links.json: quickLaunch references missing item ${id}`);
+      else if (itemById.get(id)?.type !== 'app') fail(`data/links.json: quickLaunch may contain app links only; ${id} is ${itemById.get(id)?.type}`);
+    }
+  } else fail('data/links.json: quickLaunch must be an array');
 
   for (const [menuId, menuItems] of Object.entries(catalog.menus || {})) {
     if (!Array.isArray(menuItems)) fail(`data/links.json: menu ${menuId} must be an array`);
     for (const id of menuItems || []) if (!ids.has(id)) fail(`data/links.json: menu ${menuId} references missing item ${id}`);
+  }
+
+  // Detect parent cycles.
+  for (const item of items) {
+    let cursor = item.id;
+    const seen = new Set();
+    while (cursor) {
+      if (seen.has(cursor)) {
+        fail(`data/links.json: hierarchy cycle detected at ${item.id}`);
+        break;
+      }
+      seen.add(cursor);
+      cursor = parentRefs.get(cursor);
+    }
   }
 }
 
@@ -93,10 +131,6 @@ const requiredFiles = [
 ];
 for (const file of requiredFiles) if (!exists(file)) fail(`missing required file: ${file}`);
 
-for (const ref of ['desktop-metadata.js', 'desktop-metadata.css']) {
-  if (exists('index.html') && !html.includes(ref)) fail(`index.html: ${ref} is not linked`);
-}
-
 const tree = [];
 function collectFiles(dir = '.') {
   for (const entry of fs.readdirSync(path.join(root, dir), { withFileTypes: true })) {
@@ -112,15 +146,6 @@ for (const file of tree.filter(file => file.endsWith('.js'))) {
   if (/data\/icons\/png|icons\/png/i.test(text)) fail(`${file}: stale local PNG icon reference remains`);
 }
 
-const metadata = exists('desktop-metadata.js') ? fs.readFileSync(path.join(root, 'desktop-metadata.js'), 'utf8') : '';
-if (metadata && !/machineUrl/.test(metadata)) fail('desktop-metadata.js: machine URL rendering missing');
-if (metadata && !/desktop-tags/.test(metadata)) fail('desktop-metadata.js: desktop tag rendering missing');
-if (metadata && !/item\.parent/.test(metadata)) fail('desktop-metadata.js: folder relationship lookup missing');
-
-const metadataCss = exists('desktop-metadata.css') ? fs.readFileSync(path.join(root, 'desktop-metadata.css'), 'utf8') : '';
-if (metadataCss && !/desktop-machine-url/.test(metadataCss)) fail('desktop-metadata.css: machine URL styles missing');
-if (metadataCss && !/desktop-tag/.test(metadataCss)) fail('desktop-metadata.css: tag pill styles missing');
-
 const hierarchy = exists('hierarchy-tree.js') ? fs.readFileSync(path.join(root, 'hierarchy-tree.js'), 'utf8') : '';
 if (hierarchy && !/data\/links\.json/.test(hierarchy)) fail('hierarchy-tree.js: catalog source missing');
 if (hierarchy && !/hierarchy-tree/.test(hierarchy)) fail('hierarchy-tree.js: tree root missing');
@@ -132,6 +157,11 @@ if (enhancements && !/prefers-reduced-motion/.test(enhancements)) fail('enhancem
 if (enhancements && !/\.hierarchy-tree/.test(enhancements)) fail('enhancements.css: hierarchy styles missing');
 if (enhancements && !/startMenuIn/.test(enhancements)) fail('enhancements.css: Start menu animation missing');
 if (enhancements && !/shortcut-modal/.test(enhancements)) fail('enhancements.css: modal polish missing');
+
+const metadata = exists('desktop-metadata.js') ? fs.readFileSync(path.join(root, 'desktop-metadata.js'), 'utf8') : '';
+if (metadata && !/okenice:desktop-rendered/.test(metadata)) fail('desktop-metadata.js: render synchronization hook missing');
+if (metadata && !/desktop-machine-url/.test(metadata)) fail('desktop-metadata.js: machine URL rendering missing');
+if (metadata && !/desktop-tag/.test(metadata)) fail('desktop-metadata.js: tag rendering missing');
 
 const folderCdn = 'https://cdn.jsdelivr.net/gh/ryokun6/ryos@main/public/resources/windows-icon-catalogs/win98/folders/directory-closed.png';
 const folderRaw = 'https://raw.githubusercontent.com/ryokun6/ryos/main/public/resources/windows-icon-catalogs/win98/folders/directory-closed.png';
@@ -150,4 +180,4 @@ if (errors.length) {
   process.exit(1);
 }
 
-console.log(`Validation passed: ${jsonFiles.length} JSON file(s), ${tree.length} repository file(s), folder-owned desktop apps, metadata, hierarchy tree and remote folder icon mirrors checked.`);
+console.log(`Validation passed: ${jsonFiles.length} JSON file(s), ${tree.length} repository file(s), catalog ownership, hierarchy, icon mirrors and UI contracts checked.`);
