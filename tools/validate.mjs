@@ -80,7 +80,10 @@ for (const ref of localRefs) {
 }
 if (/\b(?:src|href)=["']file:/i.test(html)) fail('index.html: file: URL remains in markup');
 
-const requiredFiles = ['app.js', 'runtime-guard.js', 'styles.css', 'top-taskbar.css', 'shortcut-template.css', 'menu.css', 'data/links.json'];
+const requiredFiles = [
+  'app.js', 'runtime-guard.js', 'hierarchy-tree.js', 'enhancements.css',
+  'styles.css', 'top-taskbar.css', 'shortcut-template.css', 'menu.css', 'data/links.json'
+];
 for (const file of requiredFiles) if (!exists(file)) fail(`missing required file: ${file}`);
 
 const tree = [];
@@ -97,6 +100,18 @@ for (const file of tree.filter(file => file.endsWith('.js'))) {
   const text = fs.readFileSync(path.join(root, file), 'utf8');
   if (/data\/icons\/png|icons\/png/i.test(text)) fail(`${file}: stale local PNG icon reference remains`);
 }
+
+const hierarchy = exists('hierarchy-tree.js') ? fs.readFileSync(path.join(root, 'hierarchy-tree.js'), 'utf8') : '';
+if (hierarchy && !/data\/links\.json/.test(hierarchy)) fail('hierarchy-tree.js: catalog source missing');
+if (hierarchy && !/hierarchy-tree/.test(hierarchy)) fail('hierarchy-tree.js: tree root missing');
+if (hierarchy && !/is-current/.test(hierarchy)) fail('hierarchy-tree.js: current hierarchy state missing');
+if (hierarchy && !/navigateToFolder/.test(hierarchy)) fail('hierarchy-tree.js: tree navigation missing');
+
+const enhancements = exists('enhancements.css') ? fs.readFileSync(path.join(root, 'enhancements.css'), 'utf8') : '';
+if (enhancements && !/prefers-reduced-motion/.test(enhancements)) fail('enhancements.css: reduced-motion fallback missing');
+if (enhancements && !/\.hierarchy-tree/.test(enhancements)) fail('enhancements.css: hierarchy styles missing');
+if (enhancements && !/startMenuIn/.test(enhancements)) fail('enhancements.css: Start menu animation missing');
+if (enhancements && !/shortcut-modal/.test(enhancements)) fail('enhancements.css: modal polish missing');
 
 const folderCdn = 'https://cdn.jsdelivr.net/gh/ryokun6/ryos@main/public/resources/windows-icon-catalogs/win98/folders/directory-closed.png';
 const folderRaw = 'https://raw.githubusercontent.com/ryokun6/ryos/main/public/resources/windows-icon-catalogs/win98/folders/directory-closed.png';
@@ -115,4 +130,4 @@ if (errors.length) {
   process.exit(1);
 }
 
-console.log(`Validation passed: ${jsonFiles.length} JSON file(s), ${tree.length} repository file(s), catalog relationships and folder icon mirrors checked.`);
+console.log(`Validation passed: ${jsonFiles.length} JSON file(s), ${tree.length} repository file(s), catalog relationships, hierarchy tree and folder icon mirrors checked.`);
