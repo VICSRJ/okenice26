@@ -166,12 +166,14 @@ Folder relations
 │ Desktop      │ Start menu     │ Quick Launch    │
 └──────────────┴────────────────┴─────────────────┘
     ↓
-Local PNG icon resolver
+Remote retro folder icon + embedded catalog icons
     ↓
 Safe HTTP/HTTPS target resolver
     ↓
 Browser navigation
 ```
+
+Automatic third-party favicon probing is intentionally disabled. This avoids CORP/ORB failures and keeps rendering predictable.
 
 ## 7. Icon pipeline
 
@@ -179,13 +181,13 @@ Browser navigation
 Item
  ↓
 Is folder?
- ├── yes → data/icons/png/folder.png
- └── no  → local app PNG when available
+ ├── yes → remote Windows 95/98-era folder PNG
+ └── no  → embedded data:image icon when present
               ↓
-           remote favicon fallback
+           no external favicon probing
 ```
 
-Local project assets have priority. Unsupported `file:` sources are rejected.
+The previous bundled `data/icons/png/` tree has been removed. The remote folder icon is sourced from Wikimedia Commons.
 
 ## 8. Shortcut interaction state
 
@@ -233,10 +235,10 @@ Navigation
 └── Mobile touch cascading menu
 
 Assets
-├── Local PNG registry
+├── Remote icon source policy
+├── Embedded icon validation
 ├── Missing icon report
-├── Duplicate asset report
-└── Automatic favicon import
+└── Icon source health check
 
 Validation
 ├── Duplicate IDs
@@ -282,7 +284,7 @@ Deployment
 
 1. Netscape HTML parser.
 2. Automatic `links.json` generation.
-3. Automatic local icon matching.
+3. Icon-source validation.
 4. Link health report.
 5. CI validation before deployment.
 
@@ -294,14 +296,14 @@ Keep the project split into four layers:
 CONTENT
   data/links.json
 
-ASSETS
-  data/icons/png/
+ASSET POLICY
+  remote folder icon + embedded catalog icons
 
 PRESENTATION
   HTML + CSS
 
 BEHAVIOR
-  app.js
+  app.js + runtime-guard.js
 ```
 
 Changes to one layer should not require rewriting the others unless the data contract itself changes.
