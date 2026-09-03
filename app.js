@@ -46,9 +46,53 @@
 
   const escapeHtml = value => String(value).replace(/[&<>\"]/g, char => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '\"':'&quot;' }[char]));
 
+  function faviconCandidates(item) {
+    if (!item?.url || !/^https?:/i.test(item.url)) return [];
+    try {
+      const target = new URL(item.url);
+      const origin = target.origin;
+      const host = target.hostname;
+      const encodedHost = encodeURIComponent(host);
+      const candidates = [
+        `${origin}/apple-touch-icon.png`,
+        `${origin}/favicon.svg`,
+        `${origin}/favicon.png`,
+        `${origin}/favicon.ico`,
+        `https://www.google.com/s2/favicons?domain=${encodedHost}&sz=128`
+      ];
+      if (item.icon) candidates.push(item.icon);
+      return [...new Set(candidates)];
+    } catch {
+      return item.icon ? [item.icon] : [];
+    }
+  }
+
   function iconMarkup(item, menuIcon = false) {
-    if (item.icon) return `<img class="${menuIcon ? 'menu-icon shortcut-menu-icon' : 'shortcut-icon'}" src="${escapeHtml(item.icon)}" alt="">`;
-    return `<span class="icon-art icon-folder ${menuIcon ? 'menu-icon' : ''}"></span>`;
+    if (item.type === 'folder') return `<span class="icon-art icon-folder ${menuIcon ? 'menu-icon' : ''}"></span>`;
+    const candidates = faviconCandidates(item);
+    if (!candidates.length) return `<span class="icon-art icon-folder ${menuIcon ? 'menu-icon' : ''}"></span>`;
+    const primary = candidates[0];
+    const fallbackQueue = candidates.slice(1).join('|');
+    const sizeClass = menuIcon ? 'menu-icon shortcut-menu-icon' : 'shortcut-icon';
+    return `<img class="${sizeClass} favicon-image" src="${escapeHtml(primary)}" data-favicon-fallbacks="${escapeHtml(fallbackQueue)}" alt="" loading="eager" decoding="async" referrerpolicy="no-referrer">`;
+  }
+
+  function bindFaviconImages(root = document) {
+    root.querySelectorAll('img[data-favicon-fallbacks]').forEach(image => {
+      if (image.dataset.faviconBound === '1') return;
+      image.dataset.faviconBound = '1';
+      image.addEventListener('error', () => {
+        const queue = (image.dataset.faviconFallbacks || '').split('|').filter(Boolean);
+        const next = queue.shift();
+        image.dataset.faviconFallbacks = queue.join('|');
+        if (next) {
+          image.src = next;
+          return;
+        }
+        image.classList.add('favicon-missing');
+        image.removeAttribute('src');
+      });
+    });
   }
 
   function shortcutMarkup(item, menuIcon = false, nested = false) {
@@ -98,6 +142,7 @@
 
   function renderDesktop(ids, folder = null) {
     icons.innerHTML = ids.map(resolveItem).filter(Boolean).map(item => shortcutMarkup(item)).join('');
+    bindFaviconImages(icons);
     currentFolderId = folder ? folder.id : null;
     desktopNavigation.hidden = !folder;
     desktopBack.disabled = !folder;
@@ -130,10 +175,14 @@
       const external = /^https?:/i.test(item.url || '');
       return `<a class="quick-button" href="${escapeHtml(item.url || '#')}"${external ? ' target="_blank" rel="noopener"' : ''} aria-label="${escapeHtml(item.title)}">${iconMarkup(item, true)}</a>`;
     }).join('');
+    bindFaviconImages(quickLaunch);
 
     Object.entries(catalog.menus || {}).forEach(([menuId, ids]) => {
       const panel = menu.querySelector(`[data-submenu-panel="${menuId}"]`);
-      if (panel) panel.innerHTML = renderMenuEntries(ids);
+      if (panel) {
+        panel.innerHTML = renderMenuEntries(ids);
+        bindFaviconImages(panel);
+      }
     });
   }
 
@@ -173,6 +222,7 @@
     modalName.textContent = item.title;
     modalKind.textContent = isFolder ? `Folder · ${childCount} item${childCount === 1 ? '' : 's'}` : 'Internet shortcut';
     modalPreview.innerHTML = iconMarkup(item);
+    bindFaviconImages(modalPreview);
     detailName.textContent = item.title;
     detailTarget.textContent = isFolder ? folderPath(item) : (item.url || '—');
     detailType.textContent = item.type || 'app';
