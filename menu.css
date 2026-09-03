@@ -1,0 +1,33 @@
+/* Stable Windows 98 cascading Start menu. No hash navigation, no native file URLs. */
+.start-menu{position:relative;isolation:isolate}
+.start-items{position:relative}
+.start-item{appearance:none;-webkit-appearance:none;font:11px "MS Sans Serif",Tahoma,Arial,sans-serif;color:#000;cursor:default;text-decoration:none}
+.start-item.has-submenu{cursor:default}
+.start-item.has-submenu.active,.start-item:hover{background:#000080;color:#fff}
+.start-item:focus{outline:1px dotted #fff;outline-offset:-3px}
+.start-item .item-label{min-width:0}
+.start-item .cascade{margin-left:auto;padding-left:8px;color:inherit}
+.submenu{position:absolute;left:calc(100% - 1px);top:0;width:216px;min-width:216px;margin:0;padding:2px;background:#c0c0c0;border:1px solid #000;box-shadow:1px 1px #fff,2px 2px #404040;z-index:2200}
+.submenu[hidden]{display:none}
+.menu-group{position:relative;margin:0;padding:0}
+.menu-shortcut{width:100%;min-height:27px;height:27px;margin:0;padding:2px 6px;border:1px solid transparent;background:#c0c0c0;color:#000;font:11px "MS Sans Serif",Tahoma,Arial,sans-serif;text-align:left;text-decoration:none;display:flex;align-items:center;gap:6px;cursor:pointer;box-shadow:none}
+.menu-shortcut:hover,.menu-shortcut:focus,.menu-shortcut.active{background:#000080;color:#fff;outline:0}
+.menu-folder-link{justify-content:flex-start}
+.menu-folder-link .submenu-arrow{margin-left:auto;font-size:9px}
+.menu-folder-link.active + .submenu{display:block}
+.menu-shortcut.nested{padding-left:8px}
+.menu-separator{height:2px;margin:3px 4px;background:#808080;box-shadow:0 1px #fff}
+.start-banner{flex:0 0 34px}
+.menu-icon.shortcut-menu-icon{width:24px!important;height:24px!important;max-width:24px;max-height:24px;flex:0 0 24px;margin:0}
+.favicon-image{display:block;object-fit:contain;image-rendering:pixelated;image-rendering:crisp-edges}
+.submenu .favicon-image{width:24px!important;height:24px!important}
+.start-menu .submenu{max-height:calc(100vh - 40px);overflow:visible}
+@media(max-width:700px){
+  .start-menu{width:calc(100vw - 8px)!important;max-width:calc(100vw - 8px)!important}
+  .start-items{width:100%}
+  .submenu{left:4px;top:100%;width:calc(100vw - 16px);min-width:0;max-width:calc(100vw - 16px);max-height:calc(100vh - 50px);overflow:auto}
+  .menu-group>.submenu{top:100%;left:4px}
+}
+@media(max-width:420px){
+  .submenu{left:2px;width:calc(100vw - 12px);max-width:calc(100vw - 12px)}
+}
