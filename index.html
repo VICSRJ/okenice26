@@ -9,6 +9,7 @@
 <link rel="stylesheet" href="styles.css">
 <link rel="stylesheet" href="top-taskbar.css">
 <link rel="stylesheet" href="shortcut-template.css">
+<link rel="stylesheet" href="menu.css">
 </head>
 <body>
 <main id="desktop" class="desktop" tabindex="0" aria-label="Macroloft Luxffery 26 Desktop">
@@ -37,17 +38,17 @@
   <div class="tray"><span class="tray-status"><span class="tray-speaker"></span></span><time id="clock">12:00 PM</time></div>
   <div id="start-menu" class="start-menu" hidden>
     <div class="start-banner"><span>Macroloft</span><strong>Luxffery 26</strong></div>
-    <div class="start-items">
-      <a class="start-item" href="#programs"><span class="icon-art icon-folder menu-icon"></span><span class="item-label"><u>P</u>rograms</span><span class="cascade">▶</span></a>
-      <a class="start-item" href="#favorites"><span class="icon-art icon-folder menu-icon"></span><span class="item-label"><u>F</u>avorites</span><span class="cascade">▶</span></a>
-      <a class="start-item" href="#folders"><span class="icon-art icon-folder menu-icon"></span><span class="item-label"><u>D</u>ocuments</span><span class="cascade">▶</span></a>
-      <a class="start-item" href="#settings"><span class="icon-art icon-folder menu-icon"></span><span class="item-label"><u>S</u>ettings</span><span class="cascade">▶</span></a>
-      <a class="start-item" href="#find"><span class="icon-art icon-folder menu-icon"></span><span class="item-label">F<u>i</u>nd</span></a>
-      <a class="start-item" href="#help"><span class="icon-art icon-folder menu-icon"></span><span class="item-label">Help</span></a>
-      <a class="start-item" href="#run"><span class="icon-art icon-folder menu-icon"></span><span class="item-label">Run...</span></a>
+    <nav class="start-items" aria-label="Start menu">
+      <button class="start-item has-submenu" type="button" data-menu-target="programs"><span class="icon-art icon-folder menu-icon"></span><span class="item-label"><u>P</u>rograms</span><span class="cascade">▶</span></button>
+      <button class="start-item has-submenu" type="button" data-menu-target="favorites"><span class="icon-art icon-folder menu-icon"></span><span class="item-label"><u>F</u>avorites</span><span class="cascade">▶</span></button>
+      <button class="start-item has-submenu" type="button" data-menu-target="folders"><span class="icon-art icon-folder menu-icon"></span><span class="item-label"><u>D</u>ocuments</span><span class="cascade">▶</span></button>
+      <button class="start-item has-submenu" type="button" data-menu-target="settings"><span class="icon-art icon-folder menu-icon"></span><span class="item-label"><u>S</u>ettings</span><span class="cascade">▶</span></button>
+      <button class="start-item" type="button"><span class="icon-art icon-folder menu-icon"></span><span class="item-label">F<u>i</u>nd</span></button>
+      <button class="start-item" type="button"><span class="icon-art icon-folder menu-icon"></span><span class="item-label">Help</span></button>
+      <button class="start-item" type="button"><span class="icon-art icon-folder menu-icon"></span><span class="item-label">Run...</span></button>
       <div class="menu-separator"></div>
-      <a class="start-item" href="#shutdown"><span class="icon-art icon-folder menu-icon"></span><span class="item-label">Shut Down...</span></a>
-    </div>
+      <button class="start-item" type="button"><span class="icon-art icon-folder menu-icon"></span><span class="item-label">Shut Down...</span></button>
+    </nav>
     <div class="submenu" data-submenu-panel="programs" hidden></div>
     <div class="submenu" data-submenu-panel="favorites" hidden></div>
     <div class="submenu" data-submenu-panel="folders" hidden></div>
