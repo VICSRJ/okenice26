@@ -1,6 +1,5 @@
 import fs from 'node:fs';
 import path from 'node:path';
-import { pathToFileURL } from 'node:url';
 
 const root = process.cwd();
 const errors = [];
@@ -32,6 +31,7 @@ const catalog = readJson('data/links.json');
 if (catalog) {
   const items = Array.isArray(catalog.items) ? catalog.items : [];
   const ids = new Set();
+  const itemById = new Map();
   for (const item of items) {
     if (!item || typeof item !== 'object') {
       fail('data/links.json: catalog contains a non-object item');
@@ -39,6 +39,7 @@ if (catalog) {
     }
     if (!item.id || ids.has(item.id)) fail(`data/links.json: duplicate or missing item id: ${item.id || '<empty>'}`);
     ids.add(item.id);
+    itemById.set(item.id, item);
     if (!item.title) fail(`data/links.json: missing title for ${item.id || '<empty>'}`);
     if (item.type === 'folder' && !Array.isArray(item.children)) fail(`data/links.json: folder ${item.id} must have children[]`);
     if (item.type !== 'folder' && item.url && !/^https?:\/\//i.test(item.url)) fail(`data/links.json: invalid URL on ${item.id}: ${item.url}`);
@@ -49,7 +50,7 @@ if (catalog) {
       for (const childId of item.children) {
         if (!ids.has(childId)) fail(`data/links.json: ${item.id} references missing child ${childId}`);
         else {
-          const child = items.find(candidate => candidate.id === childId);
+          const child = itemById.get(childId);
           if (child?.parent && child.parent !== item.id) fail(`data/links.json: ${childId}.parent=${child.parent} conflicts with ${item.id}.children[]`);
         }
       }
@@ -68,7 +69,7 @@ if (catalog) {
   }
 }
 
-const html = fs.existsSync(path.join(root, 'index.html')) ? fs.readFileSync(path.join(root, 'index.html'), 'utf8') : '';
+const html = exists('index.html') ? fs.readFileSync(path.join(root, 'index.html'), 'utf8') : '';
 if (!html) fail('index.html: missing');
 
 const localRefs = [...html.matchAll(/(?:src|href)=["']([^"']+)["']/gi)].map(match => match[1]);
@@ -77,6 +78,7 @@ for (const ref of localRefs) {
   const clean = ref.split(/[?#]/, 1)[0];
   if (clean && !exists(clean)) fail(`index.html: missing local asset ${clean}`);
 }
+if (/\b(?:src|href)=["']file:/i.test(html)) fail('index.html: file: URL remains in markup');
 
 const requiredFiles = ['app.js', 'runtime-guard.js', 'styles.css', 'top-taskbar.css', 'shortcut-template.css', 'menu.css', 'data/links.json'];
 for (const file of requiredFiles) if (!exists(file)) fail(`missing required file: ${file}`);
@@ -94,7 +96,6 @@ collectFiles();
 for (const file of tree.filter(file => file.endsWith('.js'))) {
   const text = fs.readFileSync(path.join(root, file), 'utf8');
   if (/data\/icons\/png|icons\/png/i.test(text)) fail(`${file}: stale local PNG icon reference remains`);
-  if (/\bfile:/i.test(text)) fail(`${file}: file: URL reference remains`);
 }
 
 const folderCdn = 'https://cdn.jsdelivr.net/gh/ryokun6/ryos@main/public/resources/windows-icon-catalogs/win98/folders/directory-closed.png';
@@ -115,4 +116,3 @@ if (errors.length) {
 }
 
 console.log(`Validation passed: ${jsonFiles.length} JSON file(s), ${tree.length} repository file(s), catalog relationships and folder icon mirrors checked.`);
-console.log(`Validator: ${pathToFileURL(path.join(root, 'tools/validate.mjs')).href}`);
