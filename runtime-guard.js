@@ -1,63 +1,110 @@
 (() => {
   'use strict';
 
-  // GitHub Pages must stay entirely on web-safe resources.
-  // Prevent remote favicon/icon probing and accidental file:/// references.
-  const localFallbackIcon = 'data/icons/png/folder.png';
+  // One remote retro folder icon. No bundled PNG icon directory is required.
+  const REMOTE_FOLDER_ICON = 'https://upload.wikimedia.org/wikipedia/commons/0/0b/Windows_95_FOLDER.png';
 
-  const isExplicitUnsafeUrl = value => {
-    if (!value) return false;
-    const raw = String(value).trim();
-    return /^(?:file:|javascript:|vbscript:|data:text\/html)/i.test(raw);
+  const isFileUrl = value => /^\s*file:/i.test(String(value || ''));
+  const isHttpUrl = value => /^\s*https?:/i.test(String(value || ''));
+  const isDataImage = value => /^\s*data:image\//i.test(String(value || ''));
+
+  const dataImageFallback = image => {
+    const raw = image?.getAttribute?.('data-favicon-fallbacks') || '';
+    return raw.split('|').find(candidate => isDataImage(candidate)) || '';
   };
 
-  const isRemoteImage = value => /^https?:/i.test(String(value || '').trim());
+  const normalizeImageUrl = (image, value) => {
+    const raw = String(value || '').trim();
+    if (!raw) return '';
+    if (isFileUrl(raw)) return '';
+    if (isDataImage(raw)) return raw;
+    if (/data\/icons\/png\/folder\.png(?:$|[?#])/i.test(raw) || /(?:^|\/)folder\.png(?:$|[?#])/i.test(raw)) {
+      return REMOTE_FOLDER_ICON;
+    }
+    if (isHttpUrl(raw)) {
+      return dataImageFallback(image);
+    }
+    try {
+      const url = new URL(raw, document.baseURI);
+      if (url.protocol === 'file:') return '';
+      if (url.protocol === 'data:') return isDataImage(url.href) ? url.href : '';
+      if (url.protocol === 'http:' || url.protocol === 'https:') return dataImageFallback(image);
+      return url.pathname + url.search + url.hash;
+    } catch {
+      return '';
+    }
+  };
 
-  const sanitizeNode = node => {
-    if (!(node instanceof Element)) return;
+  const sanitizeElement = element => {
+    if (!(element instanceof Element)) return;
 
-    if (node.matches('a[href]') && isExplicitUnsafeUrl(node.getAttribute('href'))) {
-      node.removeAttribute('href');
-      node.setAttribute('aria-disabled', 'true');
+    if (element.matches('a[href]')) {
+      const href = element.getAttribute('href');
+      if (isFileUrl(href)) {
+        element.removeAttribute('href');
+        element.setAttribute('aria-disabled', 'true');
+      }
     }
 
-    if (node.matches('img[src]')) {
-      const src = node.getAttribute('src');
-      // Keep project-local paths and data images. Suppress external favicon loads:
-      // many target sites send CORP headers that browsers reject when embedded.
-      if (src && (isRemoteImage(src) || isExplicitUnsafeUrl(src))) {
-        node.setAttribute('src', localFallbackIcon);
-        node.removeAttribute('data-favicon-fallbacks');
+    if (element instanceof HTMLImageElement && element.hasAttribute('src')) {
+      const current = element.getAttribute('src');
+      const safe = normalizeImageUrl(element, current);
+      if (safe !== current) {
+        if (safe) originalSetAttribute.call(element, 'src', safe);
+        else element.removeAttribute('src');
       }
     }
   };
 
   const originalSetAttribute = Element.prototype.setAttribute;
+  const originalSrc = Object.getOwnPropertyDescriptor(HTMLImageElement.prototype, 'src');
+
   Element.prototype.setAttribute = function(name, value) {
-    const attribute = String(name).toLowerCase();
-    if (this instanceof HTMLImageElement && attribute === 'src') {
-      if (isRemoteImage(value) || isExplicitUnsafeUrl(value)) value = localFallbackIcon;
-    }
-    if (this instanceof HTMLAnchorElement && attribute === 'href' && isExplicitUnsafeUrl(value)) {
+    const key = String(name).toLowerCase();
+    if (this instanceof HTMLAnchorElement && key === 'href' && isFileUrl(value)) {
       this.removeAttribute('href');
-      this.setAttribute('aria-disabled', 'true');
+      originalSetAttribute.call(this, 'aria-disabled', 'true');
       return;
+    }
+    if (this instanceof HTMLImageElement && key === 'src') {
+      const safe = normalizeImageUrl(this, value);
+      if (!safe) {
+        this.removeAttribute('src');
+        return;
+      }
+      return originalSetAttribute.call(this, 'src', safe);
     }
     return originalSetAttribute.call(this, name, value);
   };
+
+  if (originalSrc?.get && originalSrc?.set) {
+    Object.defineProperty(HTMLImageElement.prototype, 'src', {
+      configurable: originalSrc.configurable,
+      enumerable: originalSrc.enumerable,
+      get: originalSrc.get,
+      set(value) {
+        const safe = normalizeImageUrl(this, value);
+        if (!safe) {
+          this.removeAttribute('src');
+          return;
+        }
+        originalSrc.set.call(this, safe);
+      }
+    });
+  }
 
   const observer = new MutationObserver(records => {
     records.forEach(record => {
       record.addedNodes.forEach(node => {
         if (node.nodeType !== Node.ELEMENT_NODE) return;
-        sanitizeNode(node);
-        node.querySelectorAll?.('a[href],img[src]').forEach(sanitizeNode);
+        sanitizeElement(node);
+        node.querySelectorAll?.('a[href],img[src]').forEach(sanitizeElement);
       });
     });
   });
 
   const boot = () => {
-    document.querySelectorAll('a[href],img[src]').forEach(sanitizeNode);
+    document.querySelectorAll('a[href],img[src]').forEach(sanitizeElement);
     observer.observe(document.documentElement, { childList: true, subtree: true });
   };
 
