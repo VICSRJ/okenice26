@@ -1,7 +1,7 @@
 (() => {
   'use strict';
 
-  // Only the two known mirrors of the Windows 98 folder asset are allowed remotely.
+  // Remote folder art is pinned to known Windows 98 assets; ordinary web favicons are allowed for app shortcuts.
   const REMOTE_FOLDER_ICONS = new Set([
     'https://cdn.jsdelivr.net/gh/ryokun6/ryos@main/public/resources/windows-icon-catalogs/win98/folders/directory-closed.png',
     'https://raw.githubusercontent.com/ryokun6/ryos/main/public/resources/windows-icon-catalogs/win98/folders/directory-closed.png'
@@ -20,27 +20,29 @@
   const isHttpUrl = value => /^\s*https?:/i.test(String(value || ''));
   const isDataImage = value => /^\s*data:image\//i.test(String(value || ''));
 
-  const dataImageFallback = image => {
+  const fallbackCandidates = image => {
     const raw = image?.getAttribute?.('data-favicon-fallbacks') || '';
-    return raw.split('|').find(candidate => isDataImage(candidate)) || '';
+    return raw.split('|').filter(Boolean);
   };
 
   const normalizeImageUrl = (image, value) => {
     const raw = String(value || '').trim();
-    if (!raw) return '';
-    if (isFileUrl(raw)) return '';
+    if (!raw || isFileUrl(raw)) return '';
     if (isDataImage(raw)) return raw;
     if (/data\/icons\/png\/folder\.png(?:$|[?#])/i.test(raw) || /(?:^|\/)folder\.png(?:$|[?#])/i.test(raw)) {
       return [...REMOTE_FOLDER_ICONS][0];
     }
     if (isRemoteFolderIcon(raw)) return raw;
-    if (isHttpUrl(raw)) return dataImageFallback(image);
+
+    // Web favicon images are intentionally allowed: they are passive <img> resources, not executable content.
+    if (isHttpUrl(raw)) return raw;
+
     try {
       const url = new URL(raw, document.baseURI);
       if (url.protocol === 'file:') return '';
       if (url.protocol === 'data:') return isDataImage(url.href) ? url.href : '';
       if (isRemoteFolderIcon(url.href)) return url.href;
-      if (url.protocol === 'http:' || url.protocol === 'https:') return dataImageFallback(image);
+      if (url.protocol === 'http:' || url.protocol === 'https:') return url.href;
       return url.pathname + url.search + url.hash;
     } catch {
       return '';
