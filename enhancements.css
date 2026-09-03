@@ -1,4 +1,4 @@
-/* Win98 polish layer: dimensional shadows, restrained motion and hierarchy tree. */
+/* Win98 polish: clear hierarchy, restrained shadows and state-change motion. */
 
 .start-menu{
   position:fixed!important;
@@ -13,6 +13,7 @@
 .start-item,.menu-shortcut,.tree-row,.desktop-icon,.quick-button,.start-button{
   transition:background-color .08s steps(2,end),color .08s steps(2,end),transform .08s ease,box-shadow .08s ease;
 }
+
 .start-item:hover,.menu-shortcut:hover,.tree-row:hover{transform:translateX(1px)}
 .start-item:active,.menu-shortcut:active,.tree-row:active{transform:translate(1px,1px)}
 
@@ -26,24 +27,23 @@
 .shortcut-modal:not([hidden]){animation:modalFadeIn .12s steps(2,end)}
 .shortcut-dialog{box-shadow:2px 2px #000,3px 3px 0 rgba(0,0,0,.28),inset 1px 1px #fff,inset -1px -1px #404040}
 
+/* Permanent left Explorer-style hierarchy. */
 .hierarchy-tree{
   position:absolute;
   left:4px;
   top:7px;
   bottom:7px;
-  width:228px;
+  width:236px;
   background:#c0c0c0;
   border:1px solid #000;
   box-shadow:1px 1px #fff,2px 2px #404040,3px 3px 0 rgba(0,0,0,.28),inset 1px 1px #dfdfdf,inset -1px -1px #808080;
   display:flex;
   flex-direction:column;
   z-index:10;
-  opacity:0;
-  transform:translateX(-8px);
-  pointer-events:none;
-  transition:opacity .12s ease,transform .12s ease;
+  opacity:1;
+  transform:none;
+  pointer-events:auto;
 }
-.hierarchy-tree.is-visible{opacity:1;transform:translateX(0);pointer-events:auto}
 .hierarchy-titlebar{
   height:21px;
   min-height:21px;
@@ -66,7 +66,6 @@
   padding:4px 3px 8px;
   background:#fff;
   border-top:1px solid #808080;
-  scrollbar-width:auto;
 }
 .tree-root,.tree-row{
   width:100%;
@@ -85,8 +84,9 @@
   overflow:hidden;
 }
 .tree-root:hover,.tree-row:hover{background:#000080;color:#fff}
+.tree-root.is-active{background:#000080;color:#fff;box-shadow:inset 1px 1px rgba(255,255,255,.2),inset -1px -1px rgba(0,0,0,.25)}
 .tree-node{position:relative;padding:0}
-.tree-node .tree-row:after{content:"";position:absolute;left:calc(var(--tree-depth) * 14px + 8px);top:-1px;bottom:-1px;border-left:1px dotted #808080;z-index:0;pointer-events:none}
+.tree-node .tree-row:after{content:"";position:absolute;left:calc(var(--tree-depth) * 14px + 8px);top:-1px;bottom:-1px;border-left:1px dotted #808080;pointer-events:none;z-index:0}
 .tree-children{display:grid;grid-template-rows:0fr;overflow:hidden;transition:grid-template-rows .12s steps(3,end);position:relative}
 .tree-children.is-open{grid-template-rows:1fr}
 .tree-children>.tree-node{min-height:0;overflow:hidden}
@@ -107,21 +107,25 @@
 .tree-node.is-path:not(.is-current)>.tree-row{background:#dfdfdf}
 .tree-node.is-current>.tree-row:before{content:"";position:absolute;left:0;right:0;top:0;bottom:0;box-shadow:inset 1px 1px rgba(255,255,255,.15),inset -1px -1px rgba(0,0,0,.25);pointer-events:none}
 
-.desktop.has-hierarchy .desktop-icons{left:242px;transition:left .12s ease}
+/* The desktop workspace starts after the permanent tree. */
+.desktop .desktop-icons{left:250px;right:8px;width:auto;display:flex;flex-direction:row;flex-wrap:wrap;align-content:flex-start;align-items:flex-start;gap:7px 9px;overflow:auto;}
+.desktop .desktop-icon{flex:0 0 86px}
+.desktop .desktop-navigation{left:250px!important;right:8px!important;top:7px!important}
 
 @keyframes startMenuIn{from{opacity:0;transform:scaleY(.96) translateY(-2px)}to{opacity:1;transform:scaleY(1) translateY(0)}}
 @keyframes modalFadeIn{from{opacity:0}to{opacity:1}}
 
 @media(max-width:700px){
-  .start-menu{top:37px!important;left:3px!important;width:calc(100vw - 8px)!important;max-width:calc(100vw - 8px)!important}
-  .hierarchy-tree{left:3px;right:3px;width:auto;bottom:4px;max-height:42vh}
-  .desktop.has-hierarchy .desktop-icons{left:7px}
+  .hierarchy-tree{left:3px;right:3px;width:auto;bottom:4px;max-height:40vh}
+  .desktop .desktop-icons{left:7px;right:7px;bottom:calc(40vh + 10px);overflow:hidden}
+  .desktop .desktop-navigation{left:7px!important;right:7px!important;}
 }
 
 @media(max-width:420px){
-  .start-menu{top:41px!important}
+  .hierarchy-tree{max-height:42vh}
+  .desktop .desktop-icons{bottom:calc(42vh + 8px)}
 }
 
 @media(prefers-reduced-motion:reduce){
-  .start-menu,.shortcut-modal:not([hidden]),.hierarchy-tree,.tree-children,.desktop-icon,.start-item,.menu-shortcut,.tree-row,.quick-button,.start-button{animation:none!important;transition:none!important}
+  .start-menu,.shortcut-modal:not([hidden]),.tree-children,.desktop-icon,.start-item,.menu-shortcut,.tree-row,.quick-button,.start-button{animation:none!important;transition:none!important}
 }
