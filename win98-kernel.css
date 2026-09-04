@@ -1,0 +1,18 @@
+/* Okenice26 Extended — system/boot layer */
+#w98-boot-screen{position:absolute;inset:0;z-index:12000;background:#000;color:#fff;font:12px "Courier New",monospace;display:flex;align-items:center;justify-content:center}
+#w98-boot-screen[hidden]{display:none}
+.w98-boot-panel{width:min(620px,92vw);padding:18px}
+.w98-boot-logo{font:bold 28px Arial,sans-serif;letter-spacing:-2px;margin-bottom:20px;text-align:center}
+.w98-boot-brand{display:inline-block;background:#000080;padding:4px 12px}
+.w98-boot-log{height:180px;overflow:hidden;border:1px solid #404040;padding:8px;background:#050505;box-sizing:border-box}
+.w98-boot-progress{height:12px;margin-top:10px;border:1px solid #808080;background:#000}
+.w98-boot-progress span{display:block;height:100%;width:0;background:#c0c0c0}
+.w98-boot-status{margin-top:8px;color:#c0c0c0}
+#w98-welcome-layer{position:absolute;inset:0;z-index:11000;display:grid;place-items:center;background:rgba(0,0,0,.25)}
+#w98-welcome-layer[hidden]{display:none}
+.w98-welcome{width:min(480px,calc(100vw - 20px));background:#c0c0c0;border:1px solid #000;box-shadow:2px 2px #000;font:11px "MS Sans Serif",Tahoma,Arial,sans-serif}
+.w98-welcome-title{height:22px;padding:3px 5px;box-sizing:border-box;background:#000080;color:#fff;font-weight:700}
+.w98-welcome-body{padding:14px;line-height:15px}.w98-welcome-body h2{margin:0 0 8px;font-size:16px}.w98-welcome-body p{margin:6px 0}
+.w98-welcome-actions{padding:8px 10px;display:flex;justify-content:flex-end;gap:5px;border-top:1px solid #808080;box-shadow:0 -1px #fff}
+.w98-welcome-actions button{min-width:82px;height:23px;background:#c0c0c0;border:1px solid #000;box-shadow:inset 1px 1px #fff,inset -1px -1px #808080;font:11px "MS Sans Serif"}
+.w98-welcome-tip{padding:6px;border:1px inset #808080;background:#fff;margin-top:8px}
