@@ -8,7 +8,7 @@ const requiredFiles = [
   "index.html","styles.css","top-taskbar.css","shortcut-template.css","menu.css",
   "enhancements.css","desktop-metadata.css","win98-extension.css",
   "app.js","hierarchy-tree.js","desktop-metadata.js","runtime-guard.js",
-  "win98-runtime.js","win98-patch.js","win98-dnd.js",
+  "win98-runtime.js","win98-patch.js","win98-dnd.js","win98-shell-v2.css","win98-shell-v2.js",
   "manifest.webmanifest","service-worker.js","data/links.json"
 ];
 
